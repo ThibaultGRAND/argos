@@ -187,6 +187,8 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 - Pas de Rust, pas de Python dans l'app : TypeScript uniquement, en mode strict.
 - **Interface : Vue 3 + Vite.** Composants en `<script setup lang="ts">`, état partagé dans des stores Pinia,
   aucune logique métier dans les composants ni dans les stores (ils appellent les cas d'usage).
+- **Navigation : Vue Router** (mode hash).
+- **Validation : Zod** pour le contrat IPC (entrées et événements), types TypeScript déduits des schémas.
 - **Build et packaging : electron-vite + electron-builder.**
 - **Base de données : SQLite (better-sqlite3) + Drizzle ORM** (règles en §5.2).
 - **Traductions : vue-i18n**, catalogues `fr.json` / `en.json` partagés avec le processus principal. Clés typées, mêmes clés dans les deux langues.

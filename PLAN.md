@@ -48,7 +48,7 @@ Contraintes détaillées : [CLAUDE.md](CLAUDE.md) §1-2.
 
 ### 2.1 Couches, processus et arborescence
 
-> Statut : **brouillon**, en attente de validation.
+> Statut : **validé** (2026-10-02).
 
 #### Les processus Electron
 
@@ -147,12 +147,206 @@ tests/
 
 Les tests unitaires sont placés à côté du code testé (`*.test.ts`), les données de test dans `tests/fixtures/`.
 
-**Bibliothèque pressentie, à valider :** Vue Router (navigation entre les écrans, en mode hash pour fonctionner sans serveur).
+**Navigation : Vue Router** en mode hash (fonctionne sans serveur), validé le 2026-10-02.
 
 ### 2.2 Interface `AgentProvider` et capacités par fournisseur
-_À rédiger (étape 6.2)._
-- 2.3 Flux de données (CLI → import → base locale → UI)
-- 2.4 Stockage (base locale, git fantôme, fichiers du projet)
+
+> Statut : **validé** (2026-10-02).
+
+#### Principe
+Un fournisseur fait deux choses très différentes, qui arrivent à des versions différentes. On les sépare donc en **deux ports** :
+
+| Port | Rôle | Version | Risque |
+|---|---|---|---|
+| `HistorySource` | **Lire** l'historique local de la CLI (fichiers JSONL) et le convertir en événements normalisés | V0 | Faible : lecture de fichiers locaux |
+| `AgentRuntime` | **Piloter** une session en direct : lancer, reprendre, envoyer un message, interrompre, répondre aux permissions | V1 | Voir « Point de vigilance » ci-dessous |
+
+`AgentProvider` les regroupe et **déclare ses capacités**. Le reste de l'app ne teste jamais l'identité du fournisseur,
+seulement ses capacités (CLAUDE.md §5.1).
+
+#### Esquisse des ports (domaine)
+
+```ts
+interface AgentProvider {
+  readonly id: ProviderId                       // 'claude' | 'codex' | 'gemini'
+  readonly displayName: string
+  detect(): Promise<ProviderInstallation>       // installée ? version ? chemin ?
+  readonly capabilities: ProviderCapabilities
+  readonly history?: HistorySource              // absent = pas d'import
+  readonly runtime?: AgentRuntime               // absent = pas de pilotage
+}
+
+interface HistorySource {
+  discover(): AsyncIterable<SessionRef>                      // sessions présentes sur la machine
+  read(ref: SessionRef, from?: ReadCursor): AsyncIterable<NormalizedEvent> // lecture incrémentale
+}
+
+interface AgentRuntime {
+  start(options: StartOptions): Promise<LiveSession>         // projet, modèle, profil (consignes ajoutées)
+  resume(ref: SessionRef, options: StartOptions): Promise<LiveSession>
+}
+
+interface LiveSession {
+  readonly events: AsyncIterable<NormalizedEvent>
+  send(message: UserInput): Promise<void>
+  interrupt(): Promise<void>
+  answerPermission(requestId: string, decision: PermissionDecision): Promise<void>
+  stop(): Promise<void>
+}
+```
+
+#### Événements normalisés
+Tous les fournisseurs produisent **le même vocabulaire d'événements**. C'est lui que consomment l'import, l'affichage, les snapshots et le blame.
+
+| Événement | Contenu principal |
+|---|---|
+| `SessionStarted` | identifiant externe, projet (chemin), modèle, date |
+| `UserMessage` | texte, pièces jointes |
+| `AssistantMessage` | texte (complet ou par fragments en direct) |
+| `ToolCall` | identifiant, **type normalisé** (`read`, `edit`, `write`, `command`, `search`, `web`, `subagent`, `other`), cible (fichier, commande), résumé de l'entrée |
+| `ToolResult` | identifiant de l'appel, statut, extrait de sortie, fichiers modifiés (+/−) si connus |
+| `SubagentStarted` / `SubagentEnded` | identifiant, parent, rôle, modèle |
+| `UsageReported` | tokens d'entrée, de sortie, de cache, taille de la fenêtre de contexte |
+| `PermissionRequested` | identifiant, outil, cible, raison |
+| `TurnCompleted` | fin d'un tour de l'agent (**déclencheur des snapshots**) |
+| `SessionEnded` | raison (terminée, interrompue, erreur) |
+| `ProviderNotice` | événement inconnu ou non converti, conservé pour diagnostic |
+
+Le type normalisé des appels d'outils permet d'afficher partout la même chose (« Modifié src/lib/slugs.ts +12 −4 »)
+quel que soit le fournisseur.
+
+#### Capacités déclarées
+
+| Capacité | Sert à | Si absente |
+|---|---|---|
+| `history.import` | F01, F02, F03 | Le fournisseur n'apparaît pas dans l'historique |
+| `history.subagents` | Arbre des sous-agents dans l'historique | Sous-agents affichés à plat |
+| `runtime.launch`, `runtime.resume` | F05 | Lecture seule pour ce fournisseur |
+| `runtime.interrupt` | Bouton Pause / Arrêter | Seul Arrêter est proposé |
+| `runtime.permissions` | Répondre aux demandes de permission depuis Argos | L'agent tourne avec des permissions fixées au lancement |
+| `runtime.systemPrompt` | F11 (profils) | Le profil est envoyé comme premier message |
+| `runtime.modelSelection` | Sélecteur de modèle | Modèle par défaut de la CLI |
+| `usage.context` | F08 (jauge de contexte) | Jauge masquée |
+| `usage.quota` | F08 (consommation de quota) | Indicateur masqué |
+| `live.subagents` | F13 (arbre en direct) | Activité affichée à plat |
+
+**Ce qui ne dépend d'aucune capacité** : snapshots (F06), blame (F12), plans (F10), recherche (F03).
+Ils reposent uniquement sur les événements normalisés, notamment `TurnCompleted` et `ToolCall`.
+
+#### Registre et erreurs
+- Un **registre des fournisseurs** (port du domaine) liste les fournisseurs disponibles. La racine de composition y enregistre Claude ; Codex et Gemini en V3.
+- Les erreurs des fournisseurs sont converties en **erreurs du domaine** : `ProviderNotInstalled`, `ProviderAuthRequired`,
+  `ProviderFormatUnsupported`, `ProviderProcessFailed`, `ProviderQuotaExceeded`.
+- **Format inconnu toléré** : un événement que l'adaptateur ne comprend pas devient un `ProviderNotice`, il ne fait jamais échouer l'import.
+  Les formats JSONL changent sans prévenir.
+- **Données de test par version de CLI** dans `tests/fixtures/<fournisseur>/<version>/`.
+
+#### Adaptateur Claude (seul adaptateur avant la V3)
+- **Historique (V0)** : lecture des JSONL de `~/.claude/projects/` (ou du dossier défini par `CLAUDE_CONFIG_DIR`),
+  incrémentale (on reprend là où la lecture précédente s'est arrêtée), y compris les transcriptions des sous-agents.
+- **Pilotage (V1)** : avec l'abonnement de l'utilisateur, mécanisme précisé dans F05 (voir ci-dessous).
+
+#### ⚠️ Point de vigilance : le pilotage de Claude sur abonnement
+D'après des sources secondaires, à vérifier dans la documentation officielle au moment de F05 :
+- **depuis février 2026**, Anthropic interdit d'utiliser l'authentification d'un abonnement (Free, Pro, Max) dans un produit tiers ;
+- **depuis le 15 juin 2026**, chaque abonnement inclut un **crédit mensuel dédié à l'Agent SDK** (environ 20 $ en Pro, 100 $ ou 200 $ en Max).
+  Les usages programmatiques (Agent SDK, `claude -p`, apps tierces passant par l'Agent SDK) puisent dans ce crédit,
+  pas dans les limites de l'usage interactif.
+
+**Décision (2026-10-02) :** Thibault a consulté un avocat. L'usage étant personnel et non commercial,
+**Argos pilote Claude avec l'abonnement de l'utilisateur, comme le fait Nimbalyst.** La contrainte « abonnements existants »
+de CLAUDE.md §2 est maintenue. Le mécanisme exact (Agent SDK ou CLI) et l'effet sur les quotas seront précisés dans F05.
+
+#### Sources
+- [Anthropic interdit l'authentification par abonnement dans les outils tiers (alternativeto.net)](https://alternativeto.net/news/2026/2/anthropic-officially-bans-using-subscription-authentication-for-third-party-claude-use)
+- [Le crédit Agent SDK des abonnements (claudefa.st)](https://claudefa.st/blog/guide/development/agent-sdk-credit)
+- [Documentation de l'Agent SDK](https://code.claude.com/docs/en/agent-sdk/file-checkpointing)
+### 2.3 Flux de données et contrat IPC
+
+> Statut : **validé** (2026-10-02) par Claude, sur délégation de Thibault, après autocritique (voir la fin de la section).
+
+#### Principe directeur : une seule source de vérité pour l'index
+**Les fichiers JSONL des CLI sont la seule source de l'index**, y compris pour les sessions lancées depuis Argos.
+Les événements reçus en direct servent à **l'affichage en direct, aux snapshots et aux permissions**, jamais à écrire les messages en base.
+À chaque fin de tour, Argos déclenche un import incrémental de la session. Il n'existe donc **qu'un seul chemin d'écriture** des messages.
+
+#### Flux A — Import et indexation (V0)
+```
+Démarrage ─► principal lance l'indexeur
+Indexeur : pour chaque fournisseur ayant history.import
+   discover() ─► compare avec import_cursors (fichier, taille, date, position lue)
+   read(ref, curseur) ─► événements normalisés ─► conversion ─► tables d'index + FTS5
+   (une transaction par lot, curseur mis à jour dans la même transaction)
+   ─► messages typés vers le principal : progression, session importée, erreur
+Principal ─► événement IPC ─► stores Pinia ─► liste des sessions rafraîchie
+```
+- **Surveillance des dossiers** des CLI (`node:fs` `watch`, avec anti-rebond) : une session lancée dans un terminal,
+  hors d'Argos, apparaît sans relancer l'app.
+- **Filet de sécurité** : la surveillance n'est pas fiable à 100 % sur tous les OS, donc un rescan incrémental a lieu
+  au retour au premier plan de l'app et toutes les 5 minutes.
+- **Reprise sur incident** : si l'indexeur plante, le principal le relance (avec un délai croissant). Grâce aux curseurs,
+  l'import reprend où il s'était arrêté. Une ligne illisible devient un `ProviderNotice`, sans bloquer le reste.
+
+#### Flux B — Consultation (V0)
+```
+Composant ─► store Pinia ─► window.argos.sessions.list(filtre)
+   ─► preload ─► IPC invoke ─► principal : validation de l'entrée ─► cas d'usage ─► repository ─► DTO
+   ◄─ Result<DTO> ◄────────────────────────────────────────────────────────────────┘
+```
+- **Jamais de session entière d'un coup** : listes et conversations paginées par curseur, affichage virtualisé.
+- Les stores gardent l'état d'affichage (sélection, filtres, pages chargées), jamais de règle métier.
+
+#### Flux C — Recherche (V0)
+Saisie (anti-rebond côté interface) ─► `search.query` ─► cas d'usage ─► FTS5 (`snippet`, surlignage, filtres projet,
+période, fournisseur) ─► résultats paginés avec extraits et positions du terme.
+
+#### Flux D — Session en direct (V1)
+```
+Interface ─► sessions.start / send ─► cas d'usage ─► AgentRuntime ─► LiveSession.events
+Principal, pour chaque événement :
+   ├─► relais vers l'interface (fragments de texte regroupés toutes les ~50 ms)
+   ├─ PermissionRequested ─► notification si la fenêtre n'a pas le focus + demande dans l'interface ─► answerPermission
+   └─ TurnCompleted ─► snapshot via le git fantôme ─► enregistrement (donnée propre à Argos)
+                      ─► import incrémental de la session ─► événement « snapshot créé »
+```
+- Le snapshot se base sur l'état réel des fichiers (git), pas sur la liste des appels d'outils :
+  une modification faite par une commande shell est donc aussi capturée.
+
+#### Flux E — Ouvrir dans VSCode (V0)
+`editor.open({ chemin, ligne? })` ─► cas d'usage ─► vérification que le chemin appartient à un projet connu ─► adaptateur éditeur
+(commande `code` si présente, sinon ouverture par l'OS). Un chemin hors projet est refusé.
+
+#### Le contrat IPC (`src/shared/contract/`)
+- **Deux types d'échanges, déclarés une seule fois** :
+  - les **requêtes** (interface ─► principal, avec réponse) : une table `nom ─► { entrée, sortie }` ;
+  - les **événements** (principal ─► interface, sans réponse) : une table `nom ─► contenu`, avec abonnement et désabonnement.
+- **Nommage** : `<domaine>.<action>`, par exemple `sessions.list`, `search.query`, `editor.open`, `import.progress`.
+- **Schémas Zod** pour chaque entrée et chaque contenu d'événement. Les types TypeScript en sont **déduits** :
+  le schéma est l'unique source. Le principal **valide toute entrée** reçue avant d'appeler un cas d'usage.
+- **Aucune exception ne traverse l'IPC** : chaque réponse est un `Result`
+  (`{ ok: true, data }` ou `{ ok: false, error: { code, messageKey, details } }`).
+  `messageKey` est une clé de traduction : l'interface affiche l'erreur dans la langue choisie.
+- **DTO sérialisables uniquement** : objets simples, dates en chaînes ISO 8601 UTC, pas de classes.
+- **`window.argos` est généré à partir du contrat** dans le preload : aucun canal écrit à la main, aucun canal non déclaré accessible.
+- Les échanges **indexeur ↔ principal** suivent le même principe, dans `src/shared/contract/indexer/`.
+
+#### Autocritique de cette section
+| Problème repéré dans le premier jet | Correction retenue |
+|---|---|
+| Deux chemins d'écriture des messages (import JSONL et événements en direct) : risque de doublons et d'incohérences | Les JSONL restent la seule source de l'index ; le direct ne sert qu'à l'affichage, aux snapshots et aux permissions |
+| Les erreurs JavaScript passent mal par l'IPC d'Electron (perte du type et des détails) | Réponses en `Result` avec un code et une clé de traduction |
+| Envoyer une conversation entière par IPC bloquerait l'interface sur les longues sessions | Pagination par curseur et virtualisation |
+| `editor.open` aurait permis d'ouvrir n'importe quel chemin | Restriction aux chemins des projets connus |
+| La surveillance de fichiers est peu fiable sur certains OS | Rescan incrémental au premier plan et toutes les 5 minutes |
+| Le texte en direct arrive par très petits fragments : trop d'événements IPC | Regroupement toutes les ~50 ms |
+| Types écrits à la main d'un côté et validation de l'autre : risque d'écart | Schémas Zod, types déduits |
+| Tentation d'ajouter un bus d'événements ou un framework CQRS | Écarté : le contrat typé et les cas d'usage suffisent |
+
+**Nouvelle dépendance retenue : Zod** (validation des entrées IPC, types déduits). C'est le standard TypeScript,
+avec une large adoption. Valibot, plus léger, a été écarté : la taille du paquet n'a pas d'importance dans une app de bureau.
+
+### 2.4 Stockage
+_À rédiger (étape 6.4) : base locale (index et données propres à Argos), git fantôme, fichiers dans les projets, emplacements par OS._
 
 ## 3. Stack
 
@@ -333,7 +527,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 3 | Vision et roadmap | PLAN.md §1 et §5 | terminée |
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
-| 6 | Architecture globale | PLAN.md §2 | en cours (6.1) |
+| 6 | Architecture globale | PLAN.md §2 | en cours (6.1, 6.2, 6.3 validées ; 6.4 à faire) |
 | 7 | Par fonctionnalité, dans l'ordre de la roadmap : plan `features/<nom>.md` (écrans inspirés de la maquette globale, schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la fin de l'étape 6 et la validation du plan de la première fonctionnalité.
@@ -361,3 +555,8 @@ Aucun code avant la fin de l'étape 6 et la validation du plan de la première f
 | 2026-10-02 | Distinction **index reconstructible / données propres à Argos**, copie de la base avant chaque migration | Tout considérer comme un index | Commentaires de review, blame et réglages ne peuvent pas être réimportés |
 | 2026-10-02 | Traductions **vue-i18n** (catalogues partagés avec le processus principal), tests **Vitest** puis **Playwright** en V1, outillage **npm + ESLint + Prettier + dependency-cruiser** | i18next, Jest, pnpm, Biome, hooks git | Standards de l'écosystème Vue ; architecture vérifiée automatiquement |
 | 2026-10-02 | Plus de maquette par fonctionnalité : la maquette globale (C1, 2a) est la seule référence visuelle | Une maquette détaillée par fonctionnalité | Le design global suffit ; les nouveaux écrans s'en inspirent |
+| 2026-10-02 | Architecture : 4 processus (principal, indexeur, preload, interface), couches `shared` / `core` / `infrastructure`, l'interface ne voit que les DTO du contrat | Interface accédant au domaine ; import dans le processus principal | Isolation, sécurité, interface jamais bloquée, domaine libre d'évoluer |
+| 2026-10-02 | Navigation : **Vue Router** (mode hash) | Navigation maison | Standard Vue, fonctionne sans serveur |
+| 2026-10-02 | Piloter Claude avec l'abonnement de l'utilisateur, comme Nimbalyst (usage personnel, non commercial, avis d'un avocat) | Clés API ; se limiter au crédit Agent SDK | Contrainte zéro coût et abonnements existants maintenue ; mécanisme précisé dans F05 |
+| 2026-10-02 | Ports `HistorySource` et `AgentRuntime` séparés, événements normalisés, capacités déclarées | Un seul port monolithique | Lecture (V0) et pilotage (V1) arrivent à des versions différentes, avec des risques différents |
+| 2026-10-02 | Les JSONL des CLI sont la seule source de l'index ; contrat IPC typé (Zod, `Result`, `window.argos` généré) | Écrire aussi les messages reçus en direct ; exceptions à travers l'IPC | Un seul chemin d'écriture ; erreurs traduisibles ; aucune dérive entre types et validation |
