@@ -53,6 +53,14 @@ Toute idée qui viole une de ces contraintes est écartée, ou soumise à Thibau
   Claude **rappelle à Thibault de commiter** et propose un message de commit.
 - Claude ne commite pas lui-même sans qu'on le lui demande.
 
+### 3.6 Maquette avant conception
+- Avant toute étape de conception (schéma de base de données, architecture du code, plan technique d'une fonctionnalité),
+  Claude **s'arrête et le signale** : « on arrive à une étape de conception, il faut d'abord la maquette ».
+- La maquette se fait avec Thibault dans **Claude Design**. Elle doit être validée avant d'écrire la conception.
+- D'abord une **maquette globale** (structure, navigation, écrans principaux). Une fois validée,
+  une **maquette détaillée par fonctionnalité**, au moment de planifier celle-ci.
+- Le lien de la maquette est noté dans PLAN.md (section Maquettes) et dans le fichier de la fonctionnalité concernée.
+
 ## 4. Règles des plans
 
 ### 4.1 Structure
@@ -71,7 +79,9 @@ Il contient :
 3. Stack retenue et justification
 4. Liste des fonctionnalités, chacune avec : statut, version cible (V0, V1…) et lien vers `features/<nom_feature>.md` s'il existe
 5. Roadmap par version
-6. **Journal des décisions** : date, décision, alternatives écartées, raison. Une décision validée ne se rediscute pas sans motif nouveau.
+6. Maquettes : écrans, lien Claude Design, statut
+7. Étapes du projet : ordre de travail et avancement
+8. **Journal des décisions** : date, décision, alternatives écartées, raison. Une décision validée ne se rediscute pas sans motif nouveau.
 
 PLAN.md reste un **sommaire** : le détail d'une fonctionnalité va dans son fichier, pas dans PLAN.md.
 
@@ -93,6 +103,7 @@ Nom du fichier en `snake_case`, par exemple `features/agent_blame.md`.
 **Statut** : brouillon | validé | en cours | terminé | abandonné
 **Version cible** : V0 | V1 | V2 | V3
 **Dépend de** : liens vers d'autres features
+**Maquette** : lien Claude Design (obligatoire avant la section « Conception technique »)
 
 ## Problème
 Ce que ça résout, pour qui.

@@ -49,7 +49,35 @@ _À rédiger_ : objectif et périmètre de chaque version.
 - **V2 — Organiser** : plans, profils, blame
 - **V3 — Superviser** : vue des agents, notifications, multi-fournisseur complet
 
-## 6. Journal des décisions
+## 6. Maquettes
+
+Réalisées dans Claude Design. Règle : [CLAUDE.md](CLAUDE.md) §3.6.
+Statuts : `à faire` · `en cours` · `validée`
+
+| Maquette | Périmètre | Lien | Statut |
+|---|---|---|---|
+| Globale | Structure de l'app, navigation, écrans principaux de la V0 | — | à faire |
+
+Les maquettes détaillées par fonctionnalité sont ajoutées ici au moment de planifier chaque fonctionnalité.
+
+## 7. Étapes du projet
+
+Une étape à la fois, chacune validée avant la suivante ([CLAUDE.md](CLAUDE.md) §3.2).
+Statuts : `à faire` · `en cours` · `terminée`
+
+| # | Étape | Livrable | Statut |
+|---|---|---|---|
+| 1 | Règles de travail | `CLAUDE.md` | terminée |
+| 2 | Squelette du plan global | `PLAN.md` | terminée |
+| 3 | Vision et roadmap | PLAN.md §1 et §5 | à faire |
+| 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | à faire |
+| 5 | Choix de la stack | PLAN.md §3 + décision au journal | à faire |
+| 6 | Architecture globale | PLAN.md §2 | à faire |
+| 7 | Par fonctionnalité, dans l'ordre de la roadmap : **maquette détaillée** → plan `features/<nom>.md` (dont le schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
+
+Aucun code avant la fin de l'étape 6 et la validation du plan de la première fonctionnalité.
+
+## 8. Journal des décisions
 
 | Date | Décision | Alternatives écartées | Raison |
 |---|---|---|---|
@@ -58,3 +86,4 @@ _À rédiger_ : objectif et périmètre de chaque version.
 | 2026-10-01 | Abonnements via les CLI installées | Clés API | Rien de payant, chacun utilise son compte |
 | 2026-10-01 | Le cœur (snapshots, blame, plans, profils) est géré par l'app | S'appuyer sur les fonctions de chaque fournisseur | Comportement identique quel que soit l'agent |
 | 2026-10-01 | Pas de signature de code payante | Certificats Apple / Windows | Contrainte zéro coût, acceptable entre amis |
+| 2026-10-02 | Maquette avant toute conception : globale d'abord, puis par fonctionnalité | Concevoir la base de données et le code directement ; tout maquetter d'un coup | Les écrans révèlent les données nécessaires ; les écrans des versions lointaines changeront |
