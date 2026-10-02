@@ -76,7 +76,7 @@ Les versions cibles sont **validées** (voir §5).
 | F13 | Vue d'activité des agents | V3 | à définir | `features/agent_activity.md` |
 | F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à définir | `features/notifications.md` |
 | F15 | Multi-fournisseur complet via ACP (Codex, Gemini) | V3 | à définir | `features/providers.md` |
-| F16 | Paramètres de l'app | V0 | à définir | — (une ligne suffit) |
+| F16 | Paramètres de l'app, dont la langue (choisie au premier lancement, modifiable ensuite) | V0 | à définir | — (une ligne suffit) |
 
 ## 5. Roadmap
 
@@ -183,3 +183,5 @@ Aucun code avant la fin de l'étape 6 et la validation du plan de la première f
 | 2026-10-02 | Un seul adaptateur (Claude) jusqu'à la V3, interface `AgentProvider` posée dès la V0 | Les trois fournisseurs dès la V0 ; import Codex/Gemini en V1 | Valide l'architecture multi-fournisseur sans tripler le travail au départ |
 | 2026-10-02 | Nom de l'app : **Argos** (`argos` en technique) | Ariane, Mnémosyne, Delphes, Héphaïstos et les autres candidats du prompt de nommage | Argos Panoptès surveille sans relâche, comme l'app surveille les agents. Le contresens avec Hermès (son tueur dans le mythe) et les homonymes (Argos Translate, Argos CI, Argo) sont acceptés |
 | 2026-10-02 | Direction visuelle **C1 · Compte rendu imprimé** ; maquette globale **2a** | Directions A (monochrome pur), B (monochrome + accent), C2 (poste de contrôle dense) | Esprit de document technique imprimé, ne ressemble ni à un IDE ni à une interface IA générique |
+| 2026-10-02 | Interface bilingue français / anglais, langue choisie au premier lancement et modifiable dans les paramètres | Français seul ; anglais seul | Usage perso en français, partage possible avec des amis non francophones |
+| 2026-10-02 | Dossier et dépôt renommés `argos` | Garder `agents-cli` | Cohérence avec le nom de l'app |

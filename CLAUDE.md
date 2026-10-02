@@ -75,11 +75,15 @@ Toute idée qui viole une de ces contraintes est écartée, ou soumise à Thibau
 
 ### 4.1 Structure
 ```
-agents-cli/
+argos/
 ├── CLAUDE.md          ← ce fichier
 ├── PLAN.md            ← plan global : vision, architecture, roadmap, décisions
-└── features/
-    └── <nom_feature>.md   ← un plan par fonctionnalité qui le justifie
+├── features/
+│   └── <nom_feature>.md   ← un plan par fonctionnalité qui le justifie
+└── maquettes/
+    ├── prompts/       ← description de l'app + un prompt Claude Design par maquette
+    │   └── inspirations/  ← images de référence
+    └── elements/      ← maquettes finales validées (exports Claude Design)
 ```
 
 ### 4.2 PLAN.md (plan global)
@@ -152,6 +156,8 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
   avec des capacités déclarées (checkpoints, sous-agents, contexte…) plutôt que des `if (provider === …)` dispersés.
 - **Typage strict** partout. Pas de `any` ni d'équivalent sans justification écrite.
 - **Multiplateforme dès la première ligne** : chemins, fins de ligne, lancement de processus, shell. Jamais de chemin Unix codé en dur.
+- **Bilingue dès la première ligne (français et anglais)** : aucun texte affiché codé en dur dans l'UI, uniquement des clés de traduction.
+  Dates, nombres et durées formatés selon la langue choisie. Les deux langues sont complètes à chaque livraison.
 - **Erreurs explicites** : pas d'erreur silencieuse ni de `catch` vide. Les erreurs d'un fournisseur sont converties en erreurs du domaine.
 - **Tests** sur le domaine et les cas d'usage au minimum. Les adaptateurs sont testés sur des données enregistrées (exemples de sessions JSONL).
 - Pas de dépendance ajoutée sans la nommer et la justifier à Thibault.
