@@ -43,6 +43,9 @@ Toute idée qui viole une de ces contraintes est écartée, ou soumise à Thibau
   création de projet, génération de code en masse.
 - Les actions **en lecture seule** sont autorisées sans demander : lire des fichiers, chercher dans le code, faire des recherches web.
 - Écrire un fichier n'est permis que **dans le cadre d'une étape déjà validée**.
+- **Exception pendant une étape ou une fonctionnalité en cours** : autorisé sans demander d'installer les dépendances déjà validées,
+  de lancer le typecheck, le lint, les tests, la vérification d'architecture, le build et l'app.
+- **Toujours sur demande** : toute commande git, toute dépendance non listée, toute action hors du dossier du projet, toute suppression.
 
 ### 3.2 Découper et faire valider chaque étape
 - Chaque tâche est découpée en étapes courtes, annoncées avant de commencer.
