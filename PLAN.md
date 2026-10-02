@@ -346,7 +346,93 @@ Principal, pour chaque événement :
 avec une large adoption. Valibot, plus léger, a été écarté : la taille du paquet n'a pas d'importance dans une app de bureau.
 
 ### 2.4 Stockage
-_À rédiger (étape 6.4) : base locale (index et données propres à Argos), git fantôme, fichiers dans les projets, emplacements par OS._
+
+> Statut : **validé** (2026-10-02).
+
+#### Où Argos écrit, et où il n'écrit jamais
+| Emplacement | Argos y écrit ? |
+|---|---|
+| Dossier de données de l'app (ci-dessous) | ✅ Oui, c'est son espace |
+| `.argos/` à la racine d'un projet | ✅ Seulement pour les plans et profils (V2), jamais commité par Argos |
+| Le reste des fichiers d'un projet | Seulement l'agent pendant une session, et Argos lors d'un retour en arrière demandé par l'utilisateur (V1) |
+| Le `.git` d'un projet | ❌ Jamais |
+| Les dossiers des CLI (`~/.claude`, `~/.codex`, `~/.gemini`) | ❌ Jamais : lecture seule |
+
+#### Le dossier de données de l'app
+Obtenu par Electron (`app.getPath('userData')`), jamais codé en dur :
+- macOS : `~/Library/Application Support/Argos/`
+- Windows : `%APPDATA%\Argos\`
+- Linux : `~/.config/Argos/`
+
+```
+Argos/
+├── index.db           ← index reconstructible (écrit par l'indexeur)
+├── argos.db           ← données propres à Argos (écrites par le principal)
+├── backups/           ← copies de argos.db avant chaque migration (les 5 dernières)
+├── shadow-git/        ← un dépôt git fantôme par projet (V1)
+│   └── <project-key>.git/
+├── profiles/          ← profils globaux de l'utilisateur (V2)
+└── logs/              ← journaux tournants, sans contenu de conversation
+```
+
+#### Deux bases au lieu d'une
+L'index et les données propres à Argos sont dans **deux fichiers SQLite séparés**, reliés par `ATTACH` pour les lectures croisées.
+
+| | `index.db` | `argos.db` |
+|---|---|---|
+| Contenu | Projets, sessions, messages, appels d'outils, fichiers touchés, recherche FTS5, curseurs d'import | Réglages, dossiers suivis, snapshots (V1), commentaires de review (V1), liens du blame (V2) |
+| Écrit par | L'indexeur uniquement | Le principal uniquement |
+| Si on le perd | On le supprime et on réimporte (« Reconstruire l'index » dans les paramètres) | Copie automatique avant migration, jamais supprimé par une réimportation |
+| Migrations Drizzle | Leur propre série | Leur propre série |
+| Clés primaires | `INTEGER` auto-incrémentées | `TEXT` UUID (stables entre sauvegardes) |
+
+**Pourquoi deux fichiers :**
+1. **Un seul écrivain par fichier** : l'indexeur et le principal ne se disputent jamais un verrou d'écriture.
+2. **Reconstruire l'index ne peut pas toucher aux données d'Argos** : c'est garanti physiquement, pas seulement par discipline.
+3. **La sauvegarde ne porte que sur `argos.db`**, qui est petit.
+
+**Règle clé : les données d'Argos référencent l'index par des clés naturelles stables**
+(`provider_id` + identifiant externe de la session, identifiant externe du message), **jamais par les `id` de l'index**,
+qui changent à chaque reconstruction. Il n'y a donc pas de clé étrangère entre les deux bases :
+la cohérence est vérifiée par les cas d'usage, et une référence orpheline est affichée comme « session introuvable », sans plantage.
+
+#### Carte des tables (le détail des colonnes est écrit dans chaque fonctionnalité)
+| Base | Table | Fonctionnalité |
+|---|---|---|
+| index | `projects` | F01, F02 |
+| index | `sessions` (unique sur `provider_id` + `external_id`) | F01, F02 |
+| index | `messages` | F01, F02 |
+| index | `tool_calls` | F01, F02 |
+| index | `file_changes` | F01, F02 |
+| index | `messages_fts` (FTS5) | F03 |
+| index | `import_cursors` | F01 |
+| argos | `settings` | F16 |
+| argos | `tracked_folders` | F01, F16 |
+| argos | `snapshots` | F06 |
+| argos | `review_comments` | F07 |
+| argos | `blame_links` | F12 |
+
+#### Le git fantôme (V1, détails dans F06)
+- **Un dépôt nu par projet** dans `shadow-git/`, utilisé avec `--git-dir` (le dépôt fantôme) et `--work-tree` (le projet).
+  Le `.git` du projet n'est jamais touché, et un projet qui n'est pas sous git fonctionne aussi.
+- **Exclusions** : le `.gitignore` du projet, plus une liste d'Argos (`node_modules`, `.git`, dossiers de build…)
+  et une taille maximale de fichier, réglable.
+- **Fidélité** : `core.autocrlf=false`, pour capturer les fichiers exactement tels qu'ils sont, y compris sous Windows.
+- **Un commit par fin de tour**, référencé sous `refs/argos/<session>/<tour>`.
+- **Retour en arrière** : Argos prend d'abord un snapshot de l'état actuel, puis restaure. Un retour en arrière est donc lui-même annulable.
+- **Git système** appelé en ligne de commande, pas de bibliothèque git en JavaScript (trop lente sur de gros projets).
+  Git devient donc un **prérequis à partir de la V1**, détecté au démarrage.
+- La rétention et le nettoyage (`git gc`, durée de conservation) sont définis dans F06.
+
+#### Fichiers dans les projets : `.argos/` (V2)
+- `.argos/plans/` : les plans du projet (F10).
+- `.argos/profiles/` : les profils propres au projet (F11), en plus des profils globaux.
+- Argos crée ce dossier **seulement quand une fonctionnalité en a besoin**, et ne le commite jamais.
+  Le versionner ou non est le choix de l'utilisateur.
+
+#### Confidentialité
+- Les journaux ne contiennent **jamais** de contenu de conversation ni de code, seulement des événements techniques.
+- Aucune donnée ne quitte la machine.
 
 ## 3. Stack
 
@@ -419,7 +505,7 @@ SQL brut (pas de typage).
 
 ## 4. Fonctionnalités
 
-Statuts : `à définir` · `brouillon` · `validé` · `en cours` · `terminé` · `abandonné`
+Statuts : `à définir` · `brouillon` · `validé` · `en cours` · `à tester` · `terminé` · `abandonné`
 Les versions cibles sont **validées** (voir §5).
 
 | # | Fonctionnalité | Version | Statut | Plan détaillé |
@@ -527,10 +613,11 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 3 | Vision et roadmap | PLAN.md §1 et §5 | terminée |
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
-| 6 | Architecture globale | PLAN.md §2 | en cours (6.1, 6.2, 6.3 validées ; 6.4 à faire) |
-| 7 | Par fonctionnalité, dans l'ordre de la roadmap : plan `features/<nom>.md` (écrans inspirés de la maquette globale, schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
+| 6 | Architecture globale | PLAN.md §2 | terminée |
+| 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | brouillon |
+| 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
-Aucun code avant la fin de l'étape 6 et la validation du plan de la première fonctionnalité.
+Aucun code avant la validation du plan de l'étape 0 (socle).
 
 ## 8. Journal des décisions
 
@@ -560,3 +647,5 @@ Aucun code avant la fin de l'étape 6 et la validation du plan de la première f
 | 2026-10-02 | Piloter Claude avec l'abonnement de l'utilisateur, comme Nimbalyst (usage personnel, non commercial, avis d'un avocat) | Clés API ; se limiter au crédit Agent SDK | Contrainte zéro coût et abonnements existants maintenue ; mécanisme précisé dans F05 |
 | 2026-10-02 | Ports `HistorySource` et `AgentRuntime` séparés, événements normalisés, capacités déclarées | Un seul port monolithique | Lecture (V0) et pilotage (V1) arrivent à des versions différentes, avec des risques différents |
 | 2026-10-02 | Les JSONL des CLI sont la seule source de l'index ; contrat IPC typé (Zod, `Result`, `window.argos` généré) | Écrire aussi les messages reçus en direct ; exceptions à travers l'IPC | Un seul chemin d'écriture ; erreurs traduisibles ; aucune dérive entre types et validation |
+| 2026-10-02 | Stockage : deux bases (`index.db` reconstructible, `argos.db` propre à Argos), références par clés naturelles stables, git fantôme par projet via le git système (prérequis dès la V1) | Une seule base ; clés étrangères vers l'index ; bibliothèque git JavaScript | Un écrivain par fichier, reconstruction sans risque, snapshots fidèles et rapides |
+| 2026-10-02 | Après le socle, cycle court par fonctionnalité : fiche courte, code, test utilisateur, corrections | Plan détaillé validé avant chaque fonctionnalité | Architecture et liste des fonctionnalités validées ; avancer vite avec un retour utilisateur réel |

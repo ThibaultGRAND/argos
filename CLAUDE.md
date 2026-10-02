@@ -49,6 +49,17 @@ Toute idée qui viole une de ces contraintes est écartée, ou soumise à Thibau
 - **Une étape à la fois.** À la fin de chacune : résumé de ce qui a été fait, puis attente de la validation avant la suivante.
 - Pas d'enchaînement de plusieurs étapes « pour gagner du temps ».
 
+**Cycle d'une fonctionnalité (à partir de la fin de l'étape 0, le socle)**
+L'architecture et la liste des fonctionnalités étant validées, on n'itère plus sur chaque plan avant de coder :
+1. Claude rédige un `features/<nom>.md` **court** (critères d'acceptation, schéma de base de données si besoin, cas limites),
+   sans tour de validation séparé ;
+2. Claude **code la fonctionnalité en entier** et la vérifie lui-même (lint, types, tests, architecture, lancement de l'app) ;
+3. Thibault **teste en tant qu'utilisateur** et fait ses retours ;
+4. Claude corrige jusqu'à validation, met les statuts à jour et rappelle de commiter ; puis on passe à la suivante.
+
+Claude **s'arrête et demande** pendant ce cycle seulement si : il faut s'écarter de l'architecture ou de la stack,
+ajouter une dépendance non listée, ou trancher une ambiguïté qui changerait le comportement visible.
+
 ### 3.3 Demander avant de s'écarter
 - Toute déviation de la stack retenue, d'une règle de ce fichier ou d'un plan validé se **demande avant**, jamais après.
 - La demande précise ce qui change, pourquoi, et ce que ça coûte.
@@ -114,7 +125,7 @@ Nom du fichier en `snake_case`, par exemple `features/agent_blame.md`.
 ```markdown
 # <Nom de la fonctionnalité>
 
-**Statut** : brouillon | validé | en cours | terminé | abandonné
+**Statut** : brouillon | validé | en cours | à tester | terminé | abandonné
 **Version cible** : V0 | V1 | V2 | V3
 **Dépend de** : liens vers d'autres features
 **Écrans** : écrans de la maquette globale concernés, ou nouveaux écrans décrits dans « Comportement attendu »
@@ -141,8 +152,10 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 ```
 
 ### 4.5 Cycle de vie
-- Un plan passe en **validé** uniquement avec l'accord de Thibault. On ne code rien d'une fonctionnalité dont le plan est en brouillon.
-- Si l'implémentation révèle que le plan est faux, Claude **s'arrête**, met à jour le plan et le refait valider.
+- **Étape 0 et décisions d'architecture** : un plan passe en **validé** uniquement avec l'accord de Thibault ;
+  on ne code rien tant qu'il est en brouillon.
+- **Fonctionnalités** : cycle de §3.2. Statuts : `en cours` (Claude code) → `à tester` (Thibault teste) → `terminé` (validé par Thibault).
+- Si l'implémentation révèle que l'architecture ou un plan validé est faux, Claude **s'arrête**, met à jour le document et le refait valider.
 - Les statuts dans PLAN.md et dans les fichiers de fonctionnalités restent synchronisés.
 
 ## 5. Exigences d'architecture
@@ -164,21 +177,26 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 
 ### 5.2 Base de données
 - **Base locale uniquement : SQLite via better-sqlite3**, dans le dossier de données de l'app propre à chaque OS. Jamais dans les projets.
-- **Accès depuis le processus principal uniquement.** L'interface n'y touche jamais : elle passe par des appels IPC typés vers les cas d'usage.
-  Les traitements lourds (import des JSONL) tournent dans un worker.
+- **Deux fichiers** : `index.db` (index reconstructible, écrit par l'indexeur seul) et `argos.db` (données propres à Argos,
+  écrites par le processus principal seul). Chacun a sa propre série de migrations. Détails : PLAN.md §2.4.
+- **Les données d'Argos référencent l'index par des clés naturelles stables** (`provider_id` + identifiant externe),
+  jamais par les `id` de l'index. Pas de clé étrangère entre les deux bases ; une référence orpheline est gérée sans plantage.
+- **Accès réservé au processus principal et à l'indexeur.** L'interface n'y touche jamais : elle passe par des appels IPC typés vers les cas d'usage.
+  Les traitements lourds (import des JSONL) tournent dans l'indexeur (`utilityProcess`).
 - **Schéma et migrations avec Drizzle** : schéma écrit en TypeScript, migrations générées en fichiers SQL versionnés et ordonnés.
   Jamais de modification manuelle du schéma. **Chaque migration générée est relue avant d'être appliquée.**
   Ce que Drizzle ne modélise pas (tables FTS5, triggers) s'écrit dans une migration SQL dédiée.
-- **Copie automatique de la base avant chaque migration.**
+- **Copie automatique de `argos.db` avant chaque migration** (les 5 dernières sont conservées). `index.db` n'est pas sauvegardé : il se reconstruit.
 - **Schéma normalisé** : clés étrangères déclarées et actives, contraintes `NOT NULL` et `UNIQUE` là où c'est vrai, index justifiés.
-- **Conventions de nommage** : tables et colonnes en `snake_case`, tables au pluriel, clé primaire `id`, clés étrangères `<table_singulier>_id`,
+- **Conventions de nommage** : tables et colonnes en `snake_case`, tables au pluriel, clé primaire `id`
+  (`INTEGER` auto-incrémenté dans `index.db`, `TEXT` UUID dans `argos.db`), clés étrangères `<table_singulier>_id`,
   horodatages `created_at` / `updated_at` en UTC ISO 8601.
 - **Accès aux données via une couche dédiée** (repositories). Drizzle n'est utilisé que dans cette couche : aucune requête dans l'UI, les stores ni le domaine.
-- **Deux types de données, à identifier pour chaque table** (en commentaire du schéma) :
+- **Deux types de données**, chacun dans sa base :
   - **index** (sessions, messages, recherche) : reconstructible en réimportant ; les fichiers sources des fournisseurs ne sont jamais modifiés ;
   - **données propres à Argos** (commentaires de review, liens du blame, réglages, historique des snapshots) : **non reconstructibles**,
     donc protégées par la copie avant migration et jamais supprimées par une réimportation.
-- **Plans et profils** : des fichiers dans le repo du projet (versionnés par git), pas des données uniquement en base.
+- **Plans et profils** : des fichiers dans `.argos/` du projet (et `profiles/` global), pas des données uniquement en base.
 - Tout changement de schéma est décrit dans le fichier de la fonctionnalité concernée **avant** d'écrire la migration.
 
 ## 6. Stack
