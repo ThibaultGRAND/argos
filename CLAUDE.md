@@ -1,4 +1,4 @@
-# CLAUDE.md — agents-cli
+# CLAUDE.md — Argos
 
 Ce fichier définit comment Claude travaille sur ce projet. Il prime sur les habitudes par défaut.
 Toute modification de ce fichier doit être validée par Thibault.
@@ -7,12 +7,22 @@ Toute modification de ce fichier doit être validée par Thibault.
 
 ## 1. Le projet en bref
 
-**agents-cli** est une application de bureau pour piloter des agents de code IA (Claude Code, Codex, Gemini CLI) :
+**Argos** est une application de bureau pour piloter des agents de code IA (Claude Code, Codex, Gemini CLI) :
 historique consultable, recherche, review façon PR, plans, profils de pré-prompts, commits d'agent, blame, suivi des agents.
 
 Ce n'est **pas un IDE** : l'édition se fait dans VSCode via des boutons « Ouvrir dans VSCode » (projet, fichier, review).
 
 Usage personnel et partage entre amis. **Jamais vendu.**
+
+### Le nom : Argos
+- **Mythe** : Argos Panoptès, le géant aux cent yeux chargé par Héra de surveiller Io. Il ne dormait jamais tout à fait.
+- **Pourquoi** : l'app surveille en direct les agents et sous-agents, et garde la mémoire de tout ce qu'ils font.
+- **Univers** : il rejoint le panthéon personnel de Thibault (Hermès, son agent assistant messager ; L'Olympe, son wifi).
+  Clin d'œil assumé : dans le mythe, Hermès endort et tue Argos (son surnom est Argeiphontès, « le tueur d'Argos »).
+- **Icône** : un hexagone isométrique avec un œil.
+- **Nom technique** : `argos` (dépôt, binaire, dossiers de configuration), sans accent.
+- **Risques connus** : Argos Translate et Argos CI existent, Argo (CD) est très proche, et le nom évoque le panoptique.
+  Acceptés pour un projet personnel.
 
 ## 2. Contraintes non négociables
 
