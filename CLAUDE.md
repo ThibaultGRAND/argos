@@ -63,13 +63,13 @@ Toute idée qui viole une de ces contraintes est écartée, ou soumise à Thibau
   Claude **rappelle à Thibault de commiter** et propose un message de commit.
 - Claude ne commite pas lui-même sans qu'on le lui demande.
 
-### 3.6 Maquette avant conception
-- Avant toute étape de conception (schéma de base de données, architecture du code, plan technique d'une fonctionnalité),
-  Claude **s'arrête et le signale** : « on arrive à une étape de conception, il faut d'abord la maquette ».
-- La maquette se fait avec Thibault dans **Claude Design**. Elle doit être validée avant d'écrire la conception.
-- D'abord une **maquette globale** (structure, navigation, écrans principaux). Une fois validée,
-  une **maquette détaillée par fonctionnalité**, au moment de planifier celle-ci.
-- Le lien de la maquette est noté dans PLAN.md (section Maquettes) et dans le fichier de la fonctionnalité concernée.
+### 3.6 La maquette globale est la référence visuelle
+- La **maquette globale validée** (direction C1, version 2a), déposée dans `maquettes/elements/`, est **la seule référence visuelle** de l'app.
+- **On ne refait pas de maquette par fonctionnalité.** Un nouvel écran ou un nouvel élément s'inspire de la maquette globale :
+  mêmes tokens (couleurs, typographie, espacements), mêmes composants, même ton.
+- Quand un plan de fonctionnalité introduit un écran absent de la maquette, Claude le **décrit dans la section
+  « Comportement attendu »** en s'appuyant sur les écrans existants, et le signale à la validation du plan.
+- Si un besoin semble **contredire** la maquette globale, Claude s'arrête et demande avant de s'en écarter (§3.3).
 
 ## 4. Règles des plans
 
@@ -117,7 +117,7 @@ Nom du fichier en `snake_case`, par exemple `features/agent_blame.md`.
 **Statut** : brouillon | validé | en cours | terminé | abandonné
 **Version cible** : V0 | V1 | V2 | V3
 **Dépend de** : liens vers d'autres features
-**Maquette** : lien Claude Design (obligatoire avant la section « Conception technique »)
+**Écrans** : écrans de la maquette globale concernés, ou nouveaux écrans décrits dans « Comportement attendu »
 
 ## Problème
 Ce que ça résout, pour qui.
@@ -183,16 +183,17 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 
 ## 6. Stack
 
-**Socle validé : Electron + TypeScript partout.** Justification : [PLAN.md](PLAN.md) §3.
+**Validée : Electron + TypeScript partout.** Justification : [PLAN.md](PLAN.md) §3.
 - Pas de Rust, pas de Python dans l'app : TypeScript uniquement, en mode strict.
 - **Interface : Vue 3 + Vite.** Composants en `<script setup lang="ts">`, état partagé dans des stores Pinia,
   aucune logique métier dans les composants ni dans les stores (ils appellent les cas d'usage).
 - **Build et packaging : electron-vite + electron-builder.**
 - **Base de données : SQLite (better-sqlite3) + Drizzle ORM** (règles en §5.2).
-- Les choix restants (traduction, tests, outillage) sont listés en PLAN.md §3.5
-  et seront reportés ici une fois validés.
+- **Traductions : vue-i18n**, catalogues `fr.json` / `en.json` partagés avec le processus principal. Clés typées, mêmes clés dans les deux langues.
+- **Tests : Vitest** (+ @vue/test-utils), **Playwright** pour le bout en bout à partir de la V1.
+- **Outillage : npm, ESLint, Prettier, dependency-cruiser** (le sens des dépendances entre couches est vérifié automatiquement).
 
-Tant que la stack complète n'est pas validée, aucun code n'est écrit.
+Stack complète : [PLAN.md](PLAN.md) §3. Toute bibliothèque supplémentaire est nommée et justifiée avant d'être ajoutée (§5.1).
 
 ## 7. Communication
 - Réponses en français.

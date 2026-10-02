@@ -45,15 +45,118 @@ Thibault d'abord, puis quelques amis développeurs qui utilisent les mêmes outi
 Contraintes détaillées : [CLAUDE.md](CLAUDE.md) §1-2.
 
 ## 2. Architecture globale
-_À rédiger après le choix de la stack._
-- 2.1 Modules et frontières (UI / application / domaine / infrastructure)
-- 2.2 Interface `AgentProvider` et capacités par fournisseur
+
+### 2.1 Couches, processus et arborescence
+
+> Statut : **brouillon**, en attente de validation.
+
+#### Les processus Electron
+
+```
+┌──────────────────────────── Processus principal (main) ────────────────────────────┐
+│  Cycle de vie, fenêtres, menus, notifications                                       │
+│  Gestionnaires IPC  ──►  cas d'usage (application)  ──►  ports (domaine)             │
+│                                                          ▲                          │
+│  Racine de composition : branche les adaptateurs ────────┘                          │
+│  Adaptateurs : base SQLite, fournisseurs (CLI), git fantôme, système de fichiers…   │
+└──────────▲──────────────────────────────────────────────────────▲──────────────────┘
+           │ IPC typé (contrat partagé)                            │ messages typés
+┌──────────┴───────────┐                              ┌────────────┴─────────────────┐
+│  Preload             │                              │  Indexeur (utilityProcess)   │
+│  expose window.argos │                              │  lecture des JSONL, import   │
+│  (contextBridge)     │                              │  et indexation en base       │
+└──────────▲───────────┘                              └──────────────────────────────┘
+           │ API typée, aucun accès à Node
+┌──────────┴───────────────────────────────────────────┐
+│  Interface (renderer) : Vue 3, Pinia, vue-i18n         │
+└───────────────────────────────────────────────────────┘
+```
+
+| Processus | Rôle | A le droit de |
+|---|---|---|
+| **Principal** | Orchestration : fenêtres, IPC, cas d'usage, lancement des CLI, git, notifications | Tout (Node, Electron, base, système) |
+| **Indexeur** | Travaux lourds : lire des milliers de JSONL, importer et indexer sans bloquer l'app | Base et système de fichiers, sans Electron |
+| **Preload** | Pont unique entre l'interface et le principal | Seulement exposer l'API typée `window.argos` |
+| **Interface** | Afficher et déclencher des cas d'usage | Seulement appeler `window.argos` : ni Node, ni base, ni système |
+
+**Sécurité de la fenêtre** : `contextIsolation` et `sandbox` activés, `nodeIntegration` désactivé, CSP stricte,
+aucun contenu distant (polices embarquées), validation des données reçues par IPC côté principal.
+
+**Base partagée par deux processus** : SQLite en mode WAL. L'indexeur écrit les données importées,
+le principal lit et écrit les données propres à Argos. Un seul écrivain à la fois, géré par SQLite (délai d'attente configuré).
+
+#### Les couches
+
+| Couche | Contient | Peut importer |
+|---|---|---|
+| `shared` | Contrat IPC (canaux, DTO, événements), catalogues de traduction, types utilitaires | Rien |
+| `core/domain` | Entités, objets valeur, erreurs du domaine, **ports** (interfaces : repositories, `AgentProvider`, git, fichiers, horloge…) | Rien |
+| `core/application` | Cas d'usage (un fichier par cas : `ImportSessions`, `SearchMessages`, `GetSessionDetail`…), DTO d'entrée et de sortie | `core/domain` |
+| `infrastructure` | Adaptateurs qui implémentent les ports : base (schéma Drizzle, migrations, repositories), fournisseurs, git, fichiers, éditeur, chemins par OS | `core/domain` |
+| `main` | Racine de composition, gestionnaires IPC, fenêtres, menus, notifications Electron | `core`, `infrastructure`, `shared` |
+| `indexer` | Point d'entrée du processus d'indexation | `core`, `infrastructure`, `shared` |
+| `preload` | Exposition de l'API typée | `shared` |
+| `renderer` | Application Vue | `shared` |
+
+**Règles clés :**
+- **L'interface ne voit jamais le domaine** : elle ne connaît que les DTO du contrat (`shared`). On peut faire évoluer le domaine sans casser l'interface.
+- **Les adaptateurs n'importent pas les cas d'usage** : ils implémentent seulement des ports.
+- **Injection de dépendances manuelle** dans la racine de composition : pas de conteneur ni de bibliothèque.
+- Ces règles sont **vérifiées par dependency-cruiser** dans le lint et dans GitHub Actions.
+
+#### Arborescence `src/`
+
+```
+src/
+├── shared/
+│   ├── contract/          ← canaux IPC, DTO, événements (une partie par domaine fonctionnel)
+│   └── i18n/              ← fr.json, en.json, types des clés
+├── core/
+│   ├── domain/
+│   │   ├── <module>/      ← entités, objets valeur, erreurs (project, session, snapshot…)
+│   │   └── ports/         ← interfaces implémentées par l'infrastructure
+│   └── application/
+│       └── <module>/      ← cas d'usage
+├── infrastructure/
+│   ├── database/          ← schema/, migrations/, repositories/
+│   ├── providers/
+│   │   └── claude/        ← adaptateur Claude Code (seul adaptateur avant la V3)
+│   ├── git/               ← git fantôme (V1)
+│   ├── filesystem/
+│   ├── editor/            ← ouverture dans VSCode
+│   └── system/            ← chemins par OS, lancement de processus
+├── main/
+│   ├── index.ts
+│   ├── composition.ts     ← racine de composition
+│   ├── ipc/               ← un gestionnaire par partie du contrat
+│   └── windows/, menus/, notifications/
+├── indexer/
+│   └── index.ts
+├── preload/
+│   └── index.ts
+└── renderer/
+    ├── main.ts, App.vue
+    ├── ui/                ← composants de base de la maquette C1 (filets, entrées, badges, terminal…) et tokens CSS
+    ├── features/
+    │   └── <fonctionnalité>/  ← écrans, composants et store Pinia de la fonctionnalité
+    ├── layouts/           ← structure 2a : barre latérale, document, colonne D/E/F, barre d'état
+    └── i18n/
+tests/
+└── fixtures/              ← JSONL enregistrés pour tester les adaptateurs
+```
+
+Les tests unitaires sont placés à côté du code testé (`*.test.ts`), les données de test dans `tests/fixtures/`.
+
+**Bibliothèque pressentie, à valider :** Vue Router (navigation entre les écrans, en mode hash pour fonctionner sans serveur).
+
+### 2.2 Interface `AgentProvider` et capacités par fournisseur
+_À rédiger (étape 6.2)._
 - 2.3 Flux de données (CLI → import → base locale → UI)
 - 2.4 Stockage (base locale, git fantôme, fichiers du projet)
 
 ## 3. Stack
 
-> Statut : **socle validé** (2026-10-02). Les choix qui en découlent restent à faire.
+> Statut : **validé** (2026-10-02). Stack complète.
 
 ### 3.1 Socle : Electron + TypeScript partout
 **Pourquoi :**
@@ -101,10 +204,24 @@ Les bibliothèques citées sont pressenties : chacune sera confirmée au moment 
 **Écartés :** `node:sqlite` (expérimental), sql.js (base en mémoire, inadaptée), Kysely (migrations entièrement manuelles),
 SQL brut (pas de typage).
 
-### 3.5 Choix restants (à faire)
-- Système de traduction (français / anglais)
-- Framework de tests
-- Gestionnaire de paquets et outillage (lint, format)
+### 3.5 Traductions : vue-i18n
+- Catalogues partagés `fr.json` / `en.json`, utilisés par vue-i18n dans l'interface et par `@intlify/core` dans le processus principal
+  (notifications, menus natifs, boîtes de dialogue).
+- Clés typées : une clé inexistante fait échouer la compilation.
+- Un test vérifie que les deux langues ont exactement les mêmes clés.
+
+### 3.6 Tests : Vitest, puis Playwright
+- **Vitest** : domaine, cas d'usage, adaptateurs (sur des JSONL enregistrés).
+- **@vue/test-utils** : composants ayant un vrai comportement.
+- **Playwright** (Electron) : tests de bout en bout, **à partir de la V1**.
+
+### 3.7 Outillage
+- **npm** comme gestionnaire de paquets (pas de friction avec electron-builder et les modules natifs).
+- **ESLint** (typescript-eslint, eslint-plugin-vue) et **Prettier**.
+- **dependency-cruiser** : vérifie automatiquement le sens des dépendances entre les couches (CLAUDE.md §5.1).
+- Pas de hook git avant commit : lint, tests et vérification d'architecture tournent dans GitHub Actions.
+
+**Écartés :** pnpm (frictions avec electron-builder), Biome (support incomplet des templates Vue), hooks git avant commit.
 
 ## 4. Fonctionnalités
 
@@ -202,7 +319,7 @@ Organisation du dossier `maquettes/` :
 | Direction visuelle | Un écran en 3 propositions, pour choisir l'UI et les thèmes de couleur | [01_direction_visuelle.md](maquettes/prompts/01_direction_visuelle.md), puis [01b_direction_visuelle_iteration_c.md](maquettes/prompts/01b_direction_visuelle_iteration_c.md) → **C1 · Compte rendu imprimé** retenue | [Claude Design](https://claude.ai/design/p/8950cdd9-37c5-43e9-a846-97db93f52b8c?file=Directions+visuelles.dc.html) | validée |
 | Globale | Structure de l'app, navigation, écrans principaux de la V0 | [02_maquette_globale.md](maquettes/prompts/02_maquette_globale.md) → **version 2a** retenue | [Claude Design](https://claude.ai/design/p/8950cdd9-37c5-43e9-a846-97db93f52b8c) | validée — export à déposer dans `maquettes/elements/` |
 
-Les maquettes détaillées par fonctionnalité sont ajoutées ici au moment de planifier chaque fonctionnalité.
+Pas de maquette par fonctionnalité : la maquette globale est la référence, les nouveaux écrans s'en inspirent ([CLAUDE.md](CLAUDE.md) §3.6).
 
 ## 7. Étapes du projet
 
@@ -215,9 +332,9 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 2 | Squelette du plan global | `PLAN.md` | terminée |
 | 3 | Vision et roadmap | PLAN.md §1 et §5 | terminée |
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
-| 5 | Choix de la stack | PLAN.md §3 + décision au journal | en cours (socle validé) |
-| 6 | Architecture globale | PLAN.md §2 | à faire |
-| 7 | Par fonctionnalité, dans l'ordre de la roadmap : **maquette détaillée** → plan `features/<nom>.md` (dont le schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
+| 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
+| 6 | Architecture globale | PLAN.md §2 | en cours (6.1) |
+| 7 | Par fonctionnalité, dans l'ordre de la roadmap : plan `features/<nom>.md` (écrans inspirés de la maquette globale, schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la fin de l'étape 6 et la validation du plan de la première fonctionnalité.
 
@@ -242,3 +359,5 @@ Aucun code avant la fin de l'étape 6 et la validation du plan de la première f
 | 2026-10-02 | Build et packaging : **electron-vite + electron-builder** | Electron Forge | Duo éprouvé pour Vue + Vite, publication GitHub Releases et mises à jour intégrées |
 | 2026-10-02 | Base de données : **SQLite (better-sqlite3) + Drizzle ORM** | `node:sqlite`, sql.js, Kysely, SQL brut | Rapide, éprouvé, FTS5, schéma typé, migrations SQL versionnées et relues |
 | 2026-10-02 | Distinction **index reconstructible / données propres à Argos**, copie de la base avant chaque migration | Tout considérer comme un index | Commentaires de review, blame et réglages ne peuvent pas être réimportés |
+| 2026-10-02 | Traductions **vue-i18n** (catalogues partagés avec le processus principal), tests **Vitest** puis **Playwright** en V1, outillage **npm + ESLint + Prettier + dependency-cruiser** | i18next, Jest, pnpm, Biome, hooks git | Standards de l'écosystème Vue ; architecture vérifiée automatiquement |
+| 2026-10-02 | Plus de maquette par fonctionnalité : la maquette globale (C1, 2a) est la seule référence visuelle | Une maquette détaillée par fonctionnalité | Le design global suffit ; les nouveaux écrans s'en inspirent |
