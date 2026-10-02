@@ -163,19 +163,36 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 - Pas de dépendance ajoutée sans la nommer et la justifier à Thibault.
 
 ### 5.2 Base de données
-- **Base locale uniquement** (SQLite pressenti, à confirmer avec la stack).
-- **Migrations versionnées et ordonnées**, jamais de modification manuelle du schéma. Chaque migration est revue avant d'être appliquée.
+- **Base locale uniquement : SQLite via better-sqlite3**, dans le dossier de données de l'app propre à chaque OS. Jamais dans les projets.
+- **Accès depuis le processus principal uniquement.** L'interface n'y touche jamais : elle passe par des appels IPC typés vers les cas d'usage.
+  Les traitements lourds (import des JSONL) tournent dans un worker.
+- **Schéma et migrations avec Drizzle** : schéma écrit en TypeScript, migrations générées en fichiers SQL versionnés et ordonnés.
+  Jamais de modification manuelle du schéma. **Chaque migration générée est relue avant d'être appliquée.**
+  Ce que Drizzle ne modélise pas (tables FTS5, triggers) s'écrit dans une migration SQL dédiée.
+- **Copie automatique de la base avant chaque migration.**
 - **Schéma normalisé** : clés étrangères déclarées et actives, contraintes `NOT NULL` et `UNIQUE` là où c'est vrai, index justifiés.
 - **Conventions de nommage** : tables et colonnes en `snake_case`, tables au pluriel, clé primaire `id`, clés étrangères `<table_singulier>_id`,
   horodatages `created_at` / `updated_at` en UTC ISO 8601.
-- **Accès aux données via une couche dédiée** (repositories). Aucune requête SQL dans l'UI ni dans le domaine.
-- **Les données importées des CLI sont reconstructibles** : la base est un index. Les fichiers sources des fournisseurs ne sont jamais modifiés.
+- **Accès aux données via une couche dédiée** (repositories). Drizzle n'est utilisé que dans cette couche : aucune requête dans l'UI, les stores ni le domaine.
+- **Deux types de données, à identifier pour chaque table** (en commentaire du schéma) :
+  - **index** (sessions, messages, recherche) : reconstructible en réimportant ; les fichiers sources des fournisseurs ne sont jamais modifiés ;
+  - **données propres à Argos** (commentaires de review, liens du blame, réglages, historique des snapshots) : **non reconstructibles**,
+    donc protégées par la copie avant migration et jamais supprimées par une réimportation.
+- **Plans et profils** : des fichiers dans le repo du projet (versionnés par git), pas des données uniquement en base.
 - Tout changement de schéma est décrit dans le fichier de la fonctionnalité concernée **avant** d'écrire la migration.
 
 ## 6. Stack
 
-**Non décidée.** Elle sera choisie et justifiée dans PLAN.md (journal des décisions), puis reportée ici.
-Tant qu'elle n'est pas validée, aucun code n'est écrit.
+**Socle validé : Electron + TypeScript partout.** Justification : [PLAN.md](PLAN.md) §3.
+- Pas de Rust, pas de Python dans l'app : TypeScript uniquement, en mode strict.
+- **Interface : Vue 3 + Vite.** Composants en `<script setup lang="ts">`, état partagé dans des stores Pinia,
+  aucune logique métier dans les composants ni dans les stores (ils appellent les cas d'usage).
+- **Build et packaging : electron-vite + electron-builder.**
+- **Base de données : SQLite (better-sqlite3) + Drizzle ORM** (règles en §5.2).
+- Les choix restants (traduction, tests, outillage) sont listés en PLAN.md §3.5
+  et seront reportés ici une fois validés.
+
+Tant que la stack complète n'est pas validée, aucun code n'est écrit.
 
 ## 7. Communication
 - Réponses en français.

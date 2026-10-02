@@ -52,7 +52,59 @@ _À rédiger après le choix de la stack._
 - 2.4 Stockage (base locale, git fantôme, fichiers du projet)
 
 ## 3. Stack
-**Non décidée.** _À rédiger_ : options, critères, choix, justification.
+
+> Statut : **socle validé** (2026-10-02). Les choix qui en découlent restent à faire.
+
+### 3.1 Socle : Electron + TypeScript partout
+**Pourquoi :**
+- **Une seule langue** (TypeScript) pour l'interface, le cœur, les adaptateurs et les tests : tout le code reste lisible et maintenable par Thibault.
+- **Rendu identique sur macOS, Windows et Linux** grâce à Chromium embarqué : indispensable pour la direction C1 (typographie, filets de 1 px, alignements).
+- **Claude Agent SDK et ACP utilisables directement** en TypeScript.
+- Écosystème éprouvé pour ce type d'app (VSCode, Nimbalyst, Slack).
+
+**Écarté : Tauri 2**, qui impose Rust pour le cœur et dont le rendu varie selon le moteur web de chaque OS (surtout WebKitGTK sur Linux).
+
+**Compromis acceptés :**
+- App plus lourde (environ 100 à 150 Mo) et plus gourmande en mémoire.
+- **Sur macOS, pas de mise à jour automatique** sans signature Apple payante : l'app détecte la nouvelle version et ouvre la page de la GitHub Release.
+  Windows et Linux peuvent se mettre à jour automatiquement (détails dans F09).
+- Sans signature, le premier lancement sur macOS passe par clic droit > Ouvrir (ou `xattr -cr`), à documenter dans le README.
+
+### 3.2 Framework d'interface : Vue 3 + Vite
+**Pourquoi :**
+- Composants `.vue` (template, script, style dans un fichier) proches d'Astro, que Thibault connaît déjà.
+- Écosystème mûr et stable pour une application : **Pinia** (état partagé), **Reka UI** (composants accessibles),
+  **VueUse** (utilitaires), **vue-i18n** (français / anglais), TanStack Virtual (longues conversations).
+- Conventions claires (stores Pinia) qui servent la séparation UI / cas d'usage exigée par CLAUDE.md §5.1.
+- Intégration native avec Vite.
+
+**Écartés :** Astro (fait pour des sites de contenu, pas pour une app entièrement interactive),
+Svelte 5 (écosystème plus jeune, encore en adaptation après les runes), React (plus verbeux, plus loin d'Astro).
+
+Les bibliothèques citées sont pressenties : chacune sera confirmée au moment de son ajout (CLAUDE.md §5.1).
+
+### 3.3 Build et packaging : electron-vite + electron-builder
+- **electron-vite** : développement et compilation (Vite, rechargement à chaud, Vue pris en charge nativement).
+- **electron-builder** : installateurs des 3 OS (`.dmg` macOS, `.exe` NSIS Windows, AppImage et `.deb` Linux),
+  publication sur GitHub Releases, mises à jour via electron-updater (sauf macOS, voir §3.1).
+- Builds produits gratuitement par GitHub Actions sur les 3 OS (détails dans F09).
+
+**Écarté :** Electron Forge (intégration de Vite moins mûre, publication et mises à jour plus lourdes à configurer).
+
+### 3.4 Base de données : SQLite (better-sqlite3) + Drizzle ORM
+- **better-sqlite3** : le moteur SQLite le plus rapide et le plus éprouvé dans Electron, avec FTS5 pour la recherche plein texte.
+- **Drizzle ORM** : schéma en TypeScript, requêtes typées, migrations générées en fichiers SQL relus avant application.
+- Base dans le processus principal, accès via IPC typé, import lourd dans un worker, copie avant chaque migration.
+- **Deux types de données** : l'index (reconstructible) et les données propres à Argos (non reconstructibles, protégées).
+  Règles complètes : [CLAUDE.md](CLAUDE.md) §5.2.
+
+**Écartés :** `node:sqlite` (expérimental), sql.js (base en mémoire, inadaptée), Kysely (migrations entièrement manuelles),
+SQL brut (pas de typage).
+
+### 3.5 Choix restants (à faire)
+- Système de traduction (français / anglais)
+- Framework de tests
+- Gestionnaire de paquets et outillage (lint, format)
 
 ## 4. Fonctionnalités
 
@@ -163,7 +215,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 2 | Squelette du plan global | `PLAN.md` | terminée |
 | 3 | Vision et roadmap | PLAN.md §1 et §5 | terminée |
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
-| 5 | Choix de la stack | PLAN.md §3 + décision au journal | à faire |
+| 5 | Choix de la stack | PLAN.md §3 + décision au journal | en cours (socle validé) |
 | 6 | Architecture globale | PLAN.md §2 | à faire |
 | 7 | Par fonctionnalité, dans l'ordre de la roadmap : **maquette détaillée** → plan `features/<nom>.md` (dont le schéma de base de données) → validation → implémentation | Un cycle par fonctionnalité | à faire |
 
@@ -185,3 +237,8 @@ Aucun code avant la fin de l'étape 6 et la validation du plan de la première f
 | 2026-10-02 | Direction visuelle **C1 · Compte rendu imprimé** ; maquette globale **2a** | Directions A (monochrome pur), B (monochrome + accent), C2 (poste de contrôle dense) | Esprit de document technique imprimé, ne ressemble ni à un IDE ni à une interface IA générique |
 | 2026-10-02 | Interface bilingue français / anglais, langue choisie au premier lancement et modifiable dans les paramètres | Français seul ; anglais seul | Usage perso en français, partage possible avec des amis non francophones |
 | 2026-10-02 | Dossier et dépôt renommés `argos` | Garder `agents-cli` | Cohérence avec le nom de l'app |
+| 2026-10-02 | Socle technique : **Electron + TypeScript partout** | Tauri 2 (Rust), Python (PyQt ou équivalent) | Une seule langue maîtrisée, rendu identique sur les 3 OS, Agent SDK et ACP natifs en TypeScript |
+| 2026-10-02 | Framework d'interface : **Vue 3 + Vite** | Astro, Svelte 5, React | Proche d'Astro, écosystème mûr pour une app (Pinia, Reka UI, vue-i18n), conventions claires |
+| 2026-10-02 | Build et packaging : **electron-vite + electron-builder** | Electron Forge | Duo éprouvé pour Vue + Vite, publication GitHub Releases et mises à jour intégrées |
+| 2026-10-02 | Base de données : **SQLite (better-sqlite3) + Drizzle ORM** | `node:sqlite`, sql.js, Kysely, SQL brut | Rapide, éprouvé, FTS5, schéma typé, migrations SQL versionnées et relues |
+| 2026-10-02 | Distinction **index reconstructible / données propres à Argos**, copie de la base avant chaque migration | Tout considérer comme un index | Commentaires de review, blame et réglages ne peuvent pas être réimportés |
