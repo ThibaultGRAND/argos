@@ -91,6 +91,19 @@ describe('GitShadowRepository', () => {
     expect(execFileSync('git', ['rev-list', '--all', '--count'], { cwd: project, encoding: 'utf8' }).trim()).toBe('0')
   })
 
+  it('donne le diff entre deux snapshots', async () => {
+    write('a.ts', 'un\ndeux\n')
+    const first = await repository.snapshot(project, 'S0')
+    write('a.ts', 'un\nDEUX\n')
+    write('b.md', 'nouveau\n')
+    const second = await repository.snapshot(project, 'S1')
+    const { files } = await repository.diff(project, first.commitHash, second.commitHash)
+    expect(files.map((file) => [file.path, file.status, file.additions, file.deletions])).toEqual([
+      ['a.ts', 'modified', 1, 1],
+      ['b.md', 'added', 1, 0],
+    ])
+  })
+
   it('signale un dossier de projet introuvable', async () => {
     await expect(repository.snapshot(join(root, 'absent'), 'S0')).rejects.toMatchObject({ code: 'project_missing' })
   })

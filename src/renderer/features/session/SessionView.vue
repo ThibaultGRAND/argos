@@ -10,6 +10,8 @@ import { ACTIVE_STATUSES, useLiveStore } from '../../stores/live'
 import { useNoticesStore } from '../../stores/notices'
 import { useSessionStore } from '../../stores/session'
 import { useSnapshotsStore } from '../../stores/snapshots'
+import { useReviewStore } from '../../stores/review'
+import ReviewView from '../review/ReviewView.vue'
 import UiEmptyState from '../../ui/UiEmptyState.vue'
 import { groupTimeline } from '../../utils/timeline'
 import SessionHeader from './SessionHeader.vue'
@@ -28,6 +30,8 @@ const live = useLiveStore()
 const notices = useNoticesStore()
 const appStatus = useAppStatusStore()
 const snapshotsStore = useSnapshotsStore()
+const reviewStore = useReviewStore()
+const tab = ref<'report' | 'review'>('report')
 const { detail, entries, hasMore, loading, error } = storeToRefs(session)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -59,7 +63,11 @@ watch(
 
 watch(
   () => detail.value?.externalId,
-  (externalId) => void notices.attempt(() => snapshotsStore.load(externalId)),
+  (externalId) => {
+    tab.value = 'report'
+    void notices.attempt(() => snapshotsStore.load(externalId))
+    void notices.attempt(() => reviewStore.load(externalId))
+  },
   { immediate: true },
 )
 
@@ -189,7 +197,32 @@ onBeforeUnmount(() => {
     <UiEmptyState v-if="error" :title="$t('document.loadError')" />
     <template v-else-if="detail">
       <SessionHeader :detail="detail" :run="run" />
-      <div class="session__timeline">
+      <nav class="session__tabs">
+        <button
+          type="button"
+          class="session__tab"
+          :class="{ 'session__tab--active': tab === 'report' }"
+          @click="tab = 'report'"
+        >
+          {{ $t('review.tabs.report') }}
+        </button>
+        <button
+          type="button"
+          class="session__tab"
+          :class="{ 'session__tab--active': tab === 'review' }"
+          @click="tab = 'review'"
+        >
+          {{
+            $t(
+              'review.tabs.review',
+              { count: reviewStore.diff?.files.length ?? 0 },
+              reviewStore.diff?.files.length ?? 0,
+            )
+          }}
+        </button>
+      </nav>
+      <ReviewView v-if="tab === 'review'" :detail="detail" />
+      <div v-show="tab === 'report'" class="session__timeline">
         <template v-for="block in blocks" :key="block.number">
           <TimelineMessage v-if="block.type === 'message'" :number="block.number" :entry="block.entry" />
           <TimelineToolGroup
@@ -221,7 +254,7 @@ onBeforeUnmount(() => {
           @answer="(decision) => answer(request.requestId, decision)"
         />
       </div>
-      <div class="session__composer">
+      <div v-show="tab === 'report'" class="session__composer">
         <LiveComposer :macos="macos" @submit="submit" />
       </div>
     </template>
@@ -245,6 +278,28 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--tx3);
   text-align: center;
+}
+
+.session__tabs {
+  display: flex;
+  gap: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.session__tab {
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  margin-bottom: -1px;
+  background: none;
+  font-size: 13px;
+  color: var(--tx3);
+  cursor: pointer;
+}
+
+.session__tab--active {
+  border-bottom-color: var(--tx);
+  color: var(--tx);
 }
 
 .session__snapshot {

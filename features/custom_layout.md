@@ -18,6 +18,9 @@ ou de placer les panneaux là où on les veut. Thibault veut un outil « vraimen
 - **Revoir le panneau « D. Fichiers », qui « n'est pas bon du tout »** (retour du 2026-10-03).
   À préciser avec Thibault au moment de la planification : lisibilité des chemins tronqués, regroupement par dossier,
   tri, accès au diff du fichier (lien avec F07, review façon PR).
+- **Pouvoir changer le bouton de review** (retour du 2026-10-03, après F07). À préciser au moment de la planification :
+  emplacement de l'onglet « Review » (à côté du compte rendu aujourd'hui), libellé, raccourci, ou ouverture de la review
+  dans une colonne à part.
 
 ## Pistes déjà proposées (à confirmer au moment de la planification)
 - Double-clic sur une bordure : largeur par défaut.

@@ -84,6 +84,17 @@ export const useLiveStore = defineStore('live', () => {
     return adopted
   }
 
+  let syncTimer: ReturnType<typeof setTimeout> | undefined
+  function scheduleSync(): void {
+    if (syncTimer !== undefined) return
+    syncTimer = setTimeout(() => {
+      syncTimer = undefined
+      void argos.invoke('live.list').then((result) => {
+        if (result.ok) for (const summary of result.data) adopt(summary)
+      })
+    }, 100)
+  }
+
   async function load(): Promise<void> {
     for (const summary of unwrap<'live.list'>(await argos.invoke('live.list'))) adopt(summary)
     argos.on('live.event', apply)
@@ -94,6 +105,8 @@ export const useLiveStore = defineStore('live', () => {
     const run = byRunId(runId)
     if (run === undefined) {
       early.set(runId, [...(early.get(runId) ?? []), envelope])
+      // Session démarrée ailleurs que par la zone de saisie (review, autre fenêtre) : on va la chercher.
+      scheduleSync()
       return
     }
     switch (event.type) {

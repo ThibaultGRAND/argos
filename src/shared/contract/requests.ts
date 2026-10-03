@@ -24,6 +24,7 @@ import {
   RunSummarySchema,
 } from './live'
 import { SnapshotListSchema, SnapshotSchema } from './snapshots'
+import { NewReviewCommentSchema, ReviewCommentSchema, ReviewDiffSchema } from './review'
 
 interface RequestDefinition {
   readonly input: z.ZodType
@@ -59,6 +60,17 @@ export const requests = {
   },
   'snapshots.list': { input: z.object({ sessionExternalId: z.string() }), output: SnapshotListSchema },
   'snapshots.restore': { input: z.object({ snapshotId: z.string() }), output: SnapshotSchema },
+  'review.diff': {
+    input: z.object({ sessionExternalId: z.string(), fromId: z.string().optional(), toId: z.string().optional() }),
+    output: ReviewDiffSchema,
+  },
+  'review.comments.list': { input: z.object({ sessionExternalId: z.string() }), output: z.array(ReviewCommentSchema) },
+  'review.comments.add': { input: NewReviewCommentSchema, output: ReviewCommentSchema },
+  'review.comments.delete': { input: z.object({ id: z.string() }), output: z.undefined() },
+  'review.send': {
+    input: z.object({ sessionId: z.number().int(), sessionExternalId: z.string() }),
+    output: z.object({ runId: z.string(), sent: z.number().int() }),
+  },
   'search.query': { input: SearchInputSchema, output: SearchResultsSchema },
   'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>

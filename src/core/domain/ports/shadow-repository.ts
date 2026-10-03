@@ -1,3 +1,4 @@
+import type { FileDiff } from '../review/diff'
 import type { CommitStats } from '../snapshots/snapshot'
 
 export interface ShadowCommit {
@@ -13,4 +14,6 @@ export interface ShadowRepository {
   snapshot(projectPath: string, message: string): Promise<ShadowCommit>
   /** Remet les fichiers du projet dans l'état du commit (modifiés, créés et supprimés depuis). */
   restore(projectPath: string, commitHash: string): Promise<void>
+  /** Différences entre deux commits du dépôt fantôme (F07). */
+  diff(projectPath: string, fromCommit: string, toCommit: string): Promise<{ files: FileDiff[]; truncated: boolean }>
 }

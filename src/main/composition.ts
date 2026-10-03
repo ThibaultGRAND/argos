@@ -13,6 +13,7 @@ import { OpenInEditor } from '../core/application/editor/open-in-editor'
 import { LiveCommands } from '../core/application/live/live-commands'
 import { LiveSessions, type LiveSessionsListener } from '../core/application/live/live-sessions'
 import { SnapshotService } from '../core/application/snapshots/snapshot-service'
+import { ReviewService } from '../core/application/review/review-service'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
 import type { IndexerControl } from '../core/domain/ports/indexer-control'
@@ -20,6 +21,7 @@ import type { IndexerMonitor } from '../core/domain/ports/indexer-monitor'
 import { openArgosDatabase } from '../infrastructure/database/argos/argos-database'
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
 import { SqliteSnapshotRepository } from '../infrastructure/database/argos/snapshot-repository'
+import { SqliteReviewCommentRepository } from '../infrastructure/database/argos/review-comment-repository'
 import { GitShadowRepository } from '../infrastructure/git/git-shadow-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
@@ -31,7 +33,8 @@ import { ElectronAppMetadata } from './adapters/electron-app-metadata'
 import { ElectronLinkOpener } from './adapters/electron-link-opener'
 import type { RequestHandlers } from './ipc/register'
 import type { Snapshot } from '../core/domain/snapshots/snapshot'
-import type { SnapshotDto } from '../shared/contract'
+import type { ReviewCommentDto, SnapshotDto } from '../shared/contract'
+import type { ReviewComment } from '../core/domain/review/review-comment'
 import type { AppPaths } from './paths'
 
 export interface Composition {
@@ -97,9 +100,11 @@ export function compose({
 
   const executable = findClaudeExecutable(environment)
   log(executable === undefined ? 'CLI claude introuvable : binaire du SDK utilisé' : `CLI claude : ${executable}`)
+  const shadow = new GitShadowRepository({ root: paths.shadowGit, environment })
+  const snapshotRepository = new SqliteSnapshotRepository(argosDb.database)
   const snapshotService = new SnapshotService({
-    shadow: new GitShadowRepository({ root: paths.shadowGit, environment }),
-    repository: new SqliteSnapshotRepository(argosDb.database),
+    shadow,
+    repository: snapshotRepository,
     activeProjects: () => liveSessions.activeProjects(),
     newId: randomUUID,
     now: () => new Date(),
@@ -126,6 +131,15 @@ export function compose({
     randomUUID,
   )
   const liveCommands = new LiveCommands(liveSessions, sessionQueries, snapshotService)
+  const reviewService = new ReviewService({
+    shadow,
+    snapshots: snapshotRepository,
+    comments: new SqliteReviewCommentRepository(argosDb.database),
+    preferences: preferencesRepository,
+    sendToSession: (sessionId, text) => liveCommands.continueSession(sessionId, text),
+    newId: randomUUID,
+    now: () => new Date(),
+  })
 
   const handlers: RequestHandlers = {
     'app.info': () => getAppInfo.execute(),
@@ -172,6 +186,26 @@ export function compose({
       const list = await snapshotService.list(sessionExternalId)
       return { available: list.available, snapshots: list.snapshots.map(toSnapshotDto) }
     },
+    'review.diff': async ({ sessionExternalId, fromId, toId }) => {
+      const diff = await reviewService.diff(sessionExternalId, fromId, toId)
+      return {
+        snapshots: diff.snapshots.map(toSnapshotDto),
+        fromId: diff.from?.id ?? null,
+        toId: diff.to?.id ?? null,
+        files: diff.files.map((file) => ({
+          ...file,
+          hunks: file.hunks.map((hunk) => ({ ...hunk, lines: [...hunk.lines] })),
+        })),
+        truncated: diff.truncated,
+      }
+    },
+    'review.comments.list': ({ sessionExternalId }) => reviewService.listComments(sessionExternalId).map(toCommentDto),
+    'review.comments.add': (input) => toCommentDto(reviewService.addComment(input)),
+    'review.comments.delete': ({ id }) => {
+      reviewService.deleteComment(id)
+      return undefined
+    },
+    'review.send': ({ sessionId, sessionExternalId }) => reviewService.send(sessionId, sessionExternalId),
     'snapshots.restore': async ({ snapshotId }) => toSnapshotDto(await snapshotService.restore(snapshotId)),
     'live.send': ({ runId, text }) => {
       liveSessions.send(runId, text)
@@ -229,5 +263,21 @@ function toSnapshotDto(snapshot: Snapshot): SnapshotDto {
     linesAdded: snapshot.linesAdded,
     linesRemoved: snapshot.linesRemoved,
     createdAt: snapshot.createdAt,
+  }
+}
+
+/** Le fournisseur reste interne au processus principal. */
+function toCommentDto(comment: ReviewComment): ReviewCommentDto {
+  return {
+    id: comment.id,
+    sessionExternalId: comment.sessionExternalId,
+    snapshotId: comment.snapshotId,
+    filePath: comment.filePath,
+    line: comment.line,
+    side: comment.side,
+    excerpt: comment.excerpt,
+    body: comment.body,
+    sentAt: comment.sentAt,
+    createdAt: comment.createdAt,
   }
 }

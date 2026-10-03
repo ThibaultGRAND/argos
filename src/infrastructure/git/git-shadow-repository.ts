@@ -6,6 +6,8 @@ import { join, relative, resolve } from 'node:path'
 import type { ShadowCommit, ShadowRepository } from '../../core/domain/ports/shadow-repository'
 import type { CommitStats } from '../../core/domain/snapshots/snapshot'
 import { DomainError } from '../../core/domain/errors'
+import type { FileDiff } from '../../core/domain/review/diff'
+import { parseUnifiedDiff } from './unified-diff'
 
 /** Arbre vide de git : point de comparaison du tout premier snapshot. */
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
@@ -93,6 +95,23 @@ export class GitShadowRepository implements ShadowRepository {
     }
     // Contenu des fichiers modifiés ou supprimés depuis la cible.
     await this.git(projectPath, ['restore', `--source=${commitHash}`, '--worktree', '--', '.'])
+  }
+
+  async diff(
+    projectPath: string,
+    fromCommit: string,
+    toCommit: string,
+  ): Promise<{ files: FileDiff[]; truncated: boolean }> {
+    const output = await this.git(projectPath, [
+      'diff',
+      '--no-color',
+      '--no-ext-diff',
+      '--unified=3',
+      '--find-renames',
+      fromCommit,
+      toCommit,
+    ])
+    return parseUnifiedDiff(output, { maxLinesPerFile: 1_500, maxFiles: 200 })
   }
 
   private gitDirectory(projectPath: string): string {

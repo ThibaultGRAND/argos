@@ -516,7 +516,7 @@ Les versions cibles sont **validées** (voir §5).
 | F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | terminé | [features/open_in_editor.md](features/open_in_editor.md) |
 | F05 | Lancer et piloter une session d'agent | V1 | à tester | [features/agent_sessions.md](features/agent_sessions.md) |
 | F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à tester | [features/agent_snapshots.md](features/agent_snapshots.md) |
-| F07 | Review façon PR | V1 | à définir | `features/pr_review.md` |
+| F07 | Review façon PR | V1 | à tester | [features/pr_review.md](features/pr_review.md) |
 | F08 | Jauge de contexte et d'usage | V1 | à définir | `features/usage_gauge.md` |
 | F09 | Distribution (builds 3 OS, GitHub Releases, mises à jour) | V1 | à définir | `features/distribution.md` |
 | F10 | Plan mode amélioré (plans comme objets, plan vs réalité) | V2 | à définir | `features/plan_mode.md` |

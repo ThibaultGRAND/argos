@@ -79,8 +79,7 @@ const meta = computed(() =>
 
 <style scoped>
 .header {
-  padding: 28px 0 20px;
-  border-bottom: 1px solid var(--rule);
+  padding: 28px 0 14px;
 }
 
 .header__top {

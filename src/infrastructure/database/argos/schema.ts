@@ -40,3 +40,28 @@ export const snapshots = sqliteTable(
     index('snapshots_session_idx').on(table.providerId, table.sessionExternalId, table.ordinal),
   ],
 )
+
+/** Commentaires de review sur une ligne d'un fichier (F07), rattachés à la session par sa clé naturelle. */
+export const reviewComments = sqliteTable(
+  'review_comments',
+  {
+    id: text('id').primaryKey(),
+    providerId: text('provider_id').notNull(),
+    sessionExternalId: text('session_external_id').notNull(),
+    snapshotId: text('snapshot_id')
+      .notNull()
+      .references(() => snapshots.id),
+    filePath: text('file_path').notNull(),
+    line: integer('line').notNull(),
+    side: text('side', { enum: ['new', 'old'] }).notNull(),
+    excerpt: text('excerpt').notNull(),
+    body: text('body').notNull(),
+    sentAt: text('sent_at'),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    // Commentaires d'une session (onglet Review).
+    index('review_comments_session_idx').on(table.providerId, table.sessionExternalId),
+  ],
+)

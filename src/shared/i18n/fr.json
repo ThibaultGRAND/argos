@@ -123,7 +123,9 @@
     "snapshot_not_found": "Snapshot introuvable.",
     "git_unavailable": "git est introuvable.",
     "project_missing": "Le dossier du projet est introuvable.",
-    "snapshot_failed": "Le snapshot a échoué."
+    "snapshot_failed": "Le snapshot a échoué.",
+    "invalid_comment": "Le commentaire est vide ou trop long.",
+    "no_comment_to_send": "Aucun commentaire à envoyer."
   },
   "providers": {
     "claude": "Claude Code",
@@ -247,5 +249,36 @@
     "none": "Les snapshots apparaissent quand Argos pilote la session.",
     "files": "{count} f.",
     "marker": "Snapshot S{ordinal}"
+  },
+  "review": {
+    "tabs": {
+      "report": "Compte rendu",
+      "review": "Review · {count} fichier | Review · {count} fichiers"
+    },
+    "from": "De",
+    "to": "À",
+    "snapshot": "S{ordinal} · {kind}",
+    "noSnapshots": "La review compare deux snapshots : elle est disponible pour les sessions pilotées par Argos, après au moins un tour.",
+    "noChanges": "Aucune modification entre ces deux snapshots.",
+    "status": {
+      "added": "ajouté",
+      "modified": "modifié",
+      "deleted": "supprimé",
+      "renamed": "renommé"
+    },
+    "binary": "Fichier binaire : pas de diff affichable.",
+    "truncatedFile": "Diff tronqué : ouvre le fichier dans l'éditeur pour la suite.",
+    "truncatedFiles": "Trop de fichiers : seuls les 200 premiers sont affichés.",
+    "openFile": "Ouvrir dans l'éditeur",
+    "addComment": "Commenter cette ligne",
+    "commentPlaceholder": "Ta remarque pour l'agent…",
+    "save": "Ajouter",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "sent": "envoyé",
+    "pending": "{count} commentaire à envoyer | {count} commentaires à envoyer",
+    "send": "Envoyer à l'agent",
+    "sentNotice": "Commentaires envoyés à l'agent.",
+    "lineTitle": "Ouvrir à la ligne {line}"
   }
 }

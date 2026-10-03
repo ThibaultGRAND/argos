@@ -123,7 +123,9 @@
     "snapshot_not_found": "Snapshot not found.",
     "git_unavailable": "git was not found.",
     "project_missing": "The project folder was not found.",
-    "snapshot_failed": "The snapshot failed."
+    "snapshot_failed": "The snapshot failed.",
+    "invalid_comment": "The comment is empty or too long.",
+    "no_comment_to_send": "No comment to send."
   },
   "providers": {
     "claude": "Claude Code",
@@ -247,5 +249,36 @@
     "none": "Snapshots appear when Argos runs the session.",
     "files": "{count} f.",
     "marker": "Snapshot S{ordinal}"
+  },
+  "review": {
+    "tabs": {
+      "report": "Report",
+      "review": "Review · {count} file | Review · {count} files"
+    },
+    "from": "From",
+    "to": "To",
+    "snapshot": "S{ordinal} · {kind}",
+    "noSnapshots": "The review compares two snapshots: it is available for sessions run by Argos, after at least one turn.",
+    "noChanges": "No changes between these two snapshots.",
+    "status": {
+      "added": "added",
+      "modified": "modified",
+      "deleted": "deleted",
+      "renamed": "renamed"
+    },
+    "binary": "Binary file: no diff to display.",
+    "truncatedFile": "Diff truncated: open the file in the editor for the rest.",
+    "truncatedFiles": "Too many files: only the first 200 are shown.",
+    "openFile": "Open in editor",
+    "addComment": "Comment on this line",
+    "commentPlaceholder": "Your comment for the agent…",
+    "save": "Add",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "sent": "sent",
+    "pending": "{count} comment to send | {count} comments to send",
+    "send": "Send to the agent",
+    "sentNotice": "Comments sent to the agent.",
+    "lineTitle": "Open at line {line}"
   }
 }

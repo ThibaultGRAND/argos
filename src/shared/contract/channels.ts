@@ -26,6 +26,11 @@ export const requestNames = [
   'sessions.findByExternal',
   'snapshots.list',
   'snapshots.restore',
+  'review.diff',
+  'review.comments.list',
+  'review.comments.add',
+  'review.comments.delete',
+  'review.send',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 

@@ -68,3 +68,10 @@ export function relativeToProject(path: string, projectPath: string): string {
   const prefix = projectPath.endsWith(separator) ? projectPath : `${projectPath}${separator}`
   return path.startsWith(prefix) ? path.slice(prefix.length) : shortenPath(path, 60)
 }
+
+/** Chemin absolu d'un fichier du projet, avec le séparateur du projet (Windows ou Unix). */
+export function joinProjectPath(projectPath: string, relativePath: string): string {
+  const separator = projectPath.includes('\\') ? '\\' : '/'
+  const base = projectPath.endsWith(separator) ? projectPath.slice(0, -1) : projectPath
+  return `${base}${separator}${relativePath.split('/').join(separator)}`
+}

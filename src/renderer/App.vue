@@ -9,6 +9,7 @@ import { useHistoryStore } from './stores/history'
 import { useSearchStore } from './stores/search'
 import { useLiveStore } from './stores/live'
 import { useSnapshotsStore } from './stores/snapshots'
+import { useReviewStore } from './stores/review'
 import { useSessionStore } from './stores/session'
 import { usePreferencesStore } from './stores/preferences'
 
@@ -20,6 +21,7 @@ const search = useSearchStore()
 const router = useRouter()
 const live = useLiveStore()
 const snapshots = useSnapshotsStore()
+const review = useReviewStore()
 const ready = ref(false)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -54,6 +56,7 @@ onMounted(async () => {
   history.watchIndex()
   await live.load()
   snapshots.watchUpdates()
+  review.watchSnapshots()
   session.watchIndex()
   await history.loadProjects()
   ready.value = true

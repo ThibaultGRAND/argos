@@ -22,6 +22,9 @@ class FakeShadow implements ShadowRepository {
   async restore(_projectPath: string, commitHash: string): Promise<void> {
     this.restored.push(commitHash)
   }
+  async diff(): Promise<{ files: []; truncated: boolean }> {
+    return { files: [], truncated: false }
+  }
 }
 
 class MemoryRepository implements SnapshotRepository {
