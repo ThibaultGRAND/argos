@@ -23,6 +23,7 @@ import {
   RunIdOutputSchema,
   RunSummarySchema,
 } from './live'
+import { SnapshotListSchema, SnapshotSchema } from './snapshots'
 
 interface RequestDefinition {
   readonly input: z.ZodType
@@ -56,6 +57,8 @@ export const requests = {
     input: z.object({ externalId: z.string() }),
     output: z.object({ sessionId: z.number().int().nullable() }),
   },
+  'snapshots.list': { input: z.object({ sessionExternalId: z.string() }), output: SnapshotListSchema },
+  'snapshots.restore': { input: z.object({ snapshotId: z.string() }), output: SnapshotSchema },
   'search.query': { input: SearchInputSchema, output: SearchResultsSchema },
   'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>

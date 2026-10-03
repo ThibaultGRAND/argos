@@ -75,7 +75,6 @@
     "empty": "Rien pour l'instant",
     "total": "total",
     "noFiles": "Aucun fichier modifié",
-    "snapshotsSoon": "Disponible avec la V1, quand Argos pilotera les sessions.",
     "sheetFields": {
       "provider": "Fournisseur",
       "model": "Modèle",
@@ -119,7 +118,12 @@
     "run_ended": "Cette session est terminée.",
     "permission_not_found": "Cette demande a déjà reçu une réponse.",
     "project_not_found": "Projet introuvable.",
-    "session_not_found": "Session introuvable."
+    "session_not_found": "Session introuvable.",
+    "agent_running": "Un agent travaille dans ce projet : attends la fin de son tour.",
+    "snapshot_not_found": "Snapshot introuvable.",
+    "git_unavailable": "git est introuvable.",
+    "project_missing": "Le dossier du projet est introuvable.",
+    "snapshot_failed": "Le snapshot a échoué."
   },
   "providers": {
     "claude": "Claude Code",
@@ -227,5 +231,21 @@
       "allowSession": "Toujours autoriser pour cette session",
       "deny": "Refuser"
     }
+  },
+  "snapshots": {
+    "title": "Snapshots",
+    "baseline": "État initial",
+    "turn": "Fin de tour",
+    "before_restore": "Avant retour",
+    "restore": "↺ revenir",
+    "confirmTitle": "Revenir à S{ordinal} ?",
+    "confirmBody": "Les fichiers du projet reviendront à leur état de {time}. Un snapshot de l'état actuel est pris avant : tu pourras annuler ce retour.",
+    "confirm": "Revenir",
+    "cancel": "Annuler",
+    "restored": "Projet remis dans l'état de S{ordinal}. Un snapshot « avant retour » permet d'annuler.",
+    "unavailable": "git est introuvable : les snapshots sont désactivés.",
+    "none": "Les snapshots apparaissent quand Argos pilote la session.",
+    "files": "{count} f.",
+    "marker": "Snapshot S{ordinal}"
   }
 }

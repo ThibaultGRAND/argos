@@ -9,6 +9,7 @@ import { useHistoryStore } from '../../stores/history'
 import { ACTIVE_STATUSES, useLiveStore } from '../../stores/live'
 import { useNoticesStore } from '../../stores/notices'
 import { useSessionStore } from '../../stores/session'
+import { useSnapshotsStore } from '../../stores/snapshots'
 import UiEmptyState from '../../ui/UiEmptyState.vue'
 import { groupTimeline } from '../../utils/timeline'
 import SessionHeader from './SessionHeader.vue'
@@ -26,6 +27,7 @@ const history = useHistoryStore()
 const live = useLiveStore()
 const notices = useNoticesStore()
 const appStatus = useAppStatusStore()
+const snapshotsStore = useSnapshotsStore()
 const { detail, entries, hasMore, loading, error } = storeToRefs(session)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -55,8 +57,33 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => detail.value?.externalId,
+  (externalId) => void notices.attempt(() => snapshotsStore.load(externalId)),
+  { immediate: true },
+)
+
 watch(detail, (loaded) => {
   if (loaded !== undefined) void history.revealProject(loaded.projectId)
+})
+
+/** Repère « SNAPSHOT Sn » placé après le dernier bloc antérieur au snapshot (fin du tour). */
+const markersAfter = computed(() => {
+  const placed = new Map<number, string[]>()
+  const list = blocks.value
+  for (const snapshot of snapshotsStore.snapshots) {
+    // Seules les fins de tour jalonnent le document ; S0 et les « avant retour » restent dans le panneau E.
+    if (snapshot.kind !== 'turn') continue
+    const time = new Date(snapshot.createdAt).getTime()
+    let index = -1
+    list.forEach((block, position) => {
+      const entries = block.type === 'message' ? [block.entry] : block.entries
+      if (entries.some((entry) => new Date(entry.occurredAt).getTime() <= time)) index = position
+    })
+    const key = list[index]?.number ?? 0
+    placed.set(key, [...(placed.get(key) ?? []), `S${snapshot.ordinal}`])
+  }
+  return placed
 })
 
 // Pendant un tour, l'historique est figé pour éviter les doublons ; à la fin du tour, il est relu.
@@ -173,6 +200,10 @@ onBeforeUnmount(() => {
             :errors="block.errors"
             :project-path="detail.projectPath"
           />
+          <p v-for="label in markersAfter.get(block.number) ?? []" :key="label" class="session__snapshot">
+            <span class="session__snapshot-cube" aria-hidden="true" />
+            {{ $t('snapshots.marker', { ordinal: label.slice(1) }) }}
+          </p>
         </template>
         <p v-if="blocks.length === 0 && !loading" class="session__note">{{ $t('document.noEntries') }}</p>
         <div v-if="hasMore" ref="sentinel" class="session__note">{{ $t('document.loadingMore') }}</div>
@@ -214,6 +245,32 @@ onBeforeUnmount(() => {
   font-size: 12px;
   color: var(--tx3);
   text-align: center;
+}
+
+.session__snapshot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+.session__snapshot::after {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+  content: '';
+}
+
+.session__snapshot-cube {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--acc);
+  transform: rotate(45deg);
 }
 
 .session__composer {

@@ -8,6 +8,7 @@ import { useAppStatusStore } from './stores/app-status'
 import { useHistoryStore } from './stores/history'
 import { useSearchStore } from './stores/search'
 import { useLiveStore } from './stores/live'
+import { useSnapshotsStore } from './stores/snapshots'
 import { useSessionStore } from './stores/session'
 import { usePreferencesStore } from './stores/preferences'
 
@@ -18,6 +19,7 @@ const session = useSessionStore()
 const search = useSearchStore()
 const router = useRouter()
 const live = useLiveStore()
+const snapshots = useSnapshotsStore()
 const ready = ref(false)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -51,6 +53,7 @@ onMounted(async () => {
   await Promise.all([preferences.load(), appStatus.load()])
   history.watchIndex()
   await live.load()
+  snapshots.watchUpdates()
   session.watchIndex()
   await history.loadProjects()
   ready.value = true

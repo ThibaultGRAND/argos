@@ -75,7 +75,6 @@
     "empty": "Nothing yet",
     "total": "total",
     "noFiles": "No files changed",
-    "snapshotsSoon": "Available with V1, once Argos runs sessions.",
     "sheetFields": {
       "provider": "Provider",
       "model": "Model",
@@ -119,7 +118,12 @@
     "run_ended": "This session has ended.",
     "permission_not_found": "This request has already been answered.",
     "project_not_found": "Project not found.",
-    "session_not_found": "Session not found."
+    "session_not_found": "Session not found.",
+    "agent_running": "An agent is working in this project: wait until its turn ends.",
+    "snapshot_not_found": "Snapshot not found.",
+    "git_unavailable": "git was not found.",
+    "project_missing": "The project folder was not found.",
+    "snapshot_failed": "The snapshot failed."
   },
   "providers": {
     "claude": "Claude Code",
@@ -227,5 +231,21 @@
       "allowSession": "Always allow for this session",
       "deny": "Deny"
     }
+  },
+  "snapshots": {
+    "title": "Snapshots",
+    "baseline": "Initial state",
+    "turn": "End of turn",
+    "before_restore": "Before restore",
+    "restore": "↺ restore",
+    "confirmTitle": "Restore S{ordinal}?",
+    "confirmBody": "The project files will go back to their state at {time}. A snapshot of the current state is taken first: you can undo this restore.",
+    "confirm": "Restore",
+    "cancel": "Cancel",
+    "restored": "Project restored to S{ordinal}. A “before restore” snapshot lets you undo it.",
+    "unavailable": "git was not found: snapshots are disabled.",
+    "none": "Snapshots appear when Argos runs the session.",
+    "files": "{count} f.",
+    "marker": "Snapshot S{ordinal}"
   }
 }

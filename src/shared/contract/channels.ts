@@ -24,10 +24,12 @@ export const requestNames = [
   'live.answer',
   'live.list',
   'sessions.findByExternal',
+  'snapshots.list',
+  'snapshots.restore',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 
-export const eventNames = ['indexer.status', 'index.updated', 'live.event'] as const
+export const eventNames = ['indexer.status', 'index.updated', 'live.event', 'snapshots.updated'] as const
 export type EventName = (typeof eventNames)[number]
 
 export const requestChannel = (name: RequestName): string => `argos:request:${name}`

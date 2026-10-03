@@ -12,12 +12,15 @@ import { randomUUID } from 'node:crypto'
 import { OpenInEditor } from '../core/application/editor/open-in-editor'
 import { LiveCommands } from '../core/application/live/live-commands'
 import { LiveSessions, type LiveSessionsListener } from '../core/application/live/live-sessions'
+import { SnapshotService } from '../core/application/snapshots/snapshot-service'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
 import type { IndexerControl } from '../core/domain/ports/indexer-control'
 import type { IndexerMonitor } from '../core/domain/ports/indexer-monitor'
 import { openArgosDatabase } from '../infrastructure/database/argos/argos-database'
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
+import { SqliteSnapshotRepository } from '../infrastructure/database/argos/snapshot-repository'
+import { GitShadowRepository } from '../infrastructure/git/git-shadow-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
 import { ClaudeAgentRuntime } from '../infrastructure/providers/claude/claude-agent-runtime'
@@ -27,6 +30,8 @@ import { ElectronEditorLauncher } from './adapters/electron-editor-launcher'
 import { ElectronAppMetadata } from './adapters/electron-app-metadata'
 import { ElectronLinkOpener } from './adapters/electron-link-opener'
 import type { RequestHandlers } from './ipc/register'
+import type { Snapshot } from '../core/domain/snapshots/snapshot'
+import type { SnapshotDto } from '../shared/contract'
 import type { AppPaths } from './paths'
 
 export interface Composition {
@@ -40,11 +45,19 @@ export interface CompositionContext {
   /** Environnement du shell de connexion, transmis aux agents (F05). */
   readonly environment: NodeJS.ProcessEnv
   readonly liveListener: Pick<LiveSessionsListener, 'onEvent'>
+  readonly onSnapshotsChanged: (sessionExternalId: string) => void
   readonly log: (message: string) => void
 }
 
 /** Racine de composition : branche les adaptateurs sur les cas d'usage (injection manuelle). */
-export function compose({ paths, indexer, environment, liveListener, log }: CompositionContext): Composition {
+export function compose({
+  paths,
+  indexer,
+  environment,
+  liveListener,
+  onSnapshotsChanged,
+  log,
+}: CompositionContext): Composition {
   const argosDb = openArgosDatabase({
     path: paths.argosDb,
     migrationsFolder: paths.argosMigrations,
@@ -84,20 +97,35 @@ export function compose({ paths, indexer, environment, liveListener, log }: Comp
 
   const executable = findClaudeExecutable(environment)
   log(executable === undefined ? 'CLI claude introuvable : binaire du SDK utilisé' : `CLI claude : ${executable}`)
-  const liveSessions = new LiveSessions(
+  const snapshotService = new SnapshotService({
+    shadow: new GitShadowRepository({ root: paths.shadowGit, environment }),
+    repository: new SqliteSnapshotRepository(argosDb.database),
+    activeProjects: () => liveSessions.activeProjects(),
+    newId: randomUUID,
+    now: () => new Date(),
+    onChanged: onSnapshotsChanged,
+    log,
+  })
+  const liveSessions: LiveSessions = new LiveSessions(
     new ClaudeAgentRuntime({ executable, environment }),
     {
       onEvent: (runId, event) => {
         liveListener.onEvent(runId, event)
-        // Dès que la session a un identifiant, son fichier existe : l'import la fait apparaître dans la liste.
-        if (event.type === 'identified') indexer.requestImport()
+        if (event.type === 'identified') {
+          snapshotService.identified(runId, event.sessionExternalId)
+          // Dès que la session a un identifiant, son fichier existe : l'import la fait apparaître dans la liste.
+          indexer.requestImport()
+        }
       },
-      // Fin d'un tour : la CLI a écrit l'historique, l'import le reprend aussitôt (PLAN.md §2.3, flux D).
-      onTurnCompleted: () => indexer.requestImport(),
+      // Fin d'un tour : snapshot des fichiers (F06), puis import de l'historique écrit par la CLI (PLAN.md §2.3, flux D).
+      onTurnCompleted: (runId) => {
+        void snapshotService.afterTurn(runId)
+        indexer.requestImport()
+      },
     },
     randomUUID,
   )
-  const liveCommands = new LiveCommands(liveSessions, sessionQueries)
+  const liveCommands = new LiveCommands(liveSessions, sessionQueries, snapshotService)
 
   const handlers: RequestHandlers = {
     'app.info': () => getAppInfo.execute(),
@@ -134,10 +162,17 @@ export function compose({ paths, indexer, environment, liveListener, log }: Comp
       rebuildIndex.execute()
       return undefined
     },
-    'live.start': ({ projectId, text, model }) => ({ runId: liveCommands.startInProject(projectId, text, model) }),
-    'live.continue': ({ sessionId, text, model }) => ({
-      runId: liveCommands.continueSession(sessionId, text, model),
+    'live.start': async ({ projectId, text, model }) => ({
+      runId: await liveCommands.startInProject(projectId, text, model),
     }),
+    'live.continue': async ({ sessionId, text, model }) => ({
+      runId: await liveCommands.continueSession(sessionId, text, model),
+    }),
+    'snapshots.list': async ({ sessionExternalId }) => {
+      const list = await snapshotService.list(sessionExternalId)
+      return { available: list.available, snapshots: list.snapshots.map(toSnapshotDto) }
+    },
+    'snapshots.restore': async ({ snapshotId }) => toSnapshotDto(await snapshotService.restore(snapshotId)),
     'live.send': ({ runId, text }) => {
       liveSessions.send(runId, text)
       return undefined
@@ -178,5 +213,21 @@ export function compose({ paths, indexer, environment, liveListener, log }: Comp
 function withoutUndefined<T extends object>(value: T): { [K in keyof T]?: Exclude<T[K], undefined> } {
   return Object.fromEntries(Object.entries(value).filter(([, field]) => field !== undefined)) as {
     [K in keyof T]?: Exclude<T[K], undefined>
+  }
+}
+
+/** Le commit parent et le fournisseur restent internes au processus principal. */
+function toSnapshotDto(snapshot: Snapshot): SnapshotDto {
+  return {
+    id: snapshot.id,
+    projectPath: snapshot.projectPath,
+    sessionExternalId: snapshot.sessionExternalId,
+    ordinal: snapshot.ordinal,
+    kind: snapshot.kind,
+    commitHash: snapshot.commitHash,
+    filesChanged: snapshot.filesChanged,
+    linesAdded: snapshot.linesAdded,
+    linesRemoved: snapshot.linesRemoved,
+    createdAt: snapshot.createdAt,
   }
 }

@@ -5,6 +5,7 @@ import { ArgosRequestError } from '../services/argos'
 
 export interface Notice {
   readonly messageKey: string
+  readonly params?: Readonly<Record<string, string | number>>
   readonly tone: 'info' | 'error'
 }
 

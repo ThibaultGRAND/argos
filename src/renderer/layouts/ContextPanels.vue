@@ -6,6 +6,7 @@ import { openInEditor } from '../services/editor'
 import { useNoticesStore } from '../stores/notices'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSessionStore } from '../stores/session'
+import SnapshotList from '../features/snapshots/SnapshotList.vue'
 import UiMarker from '../ui/UiMarker.vue'
 import { formatDateTime, formatDuration, formatModel, relativeToProject } from '../utils/format'
 
@@ -68,7 +69,8 @@ const sheet = computed(() => {
 
     <section class="panels__section">
       <UiMarker :label="t('panel.snapshots')" />
-      <p class="panels__empty">{{ detail ? t('panel.snapshotsSoon') : t('panel.empty') }}</p>
+      <SnapshotList v-if="detail" />
+      <p v-else class="panels__empty">{{ t('panel.empty') }}</p>
     </section>
 
     <section class="panels__section">

@@ -42,6 +42,7 @@ app.whenReady().then(
       indexer,
       environment,
       liveListener: { onEvent: (runId, event) => broadcast('live.event', { runId, event: toLiveEventDto(event) }) },
+      onSnapshotsChanged: (sessionExternalId) => broadcast('snapshots.updated', { sessionExternalId }),
       log,
     })
     registerRequestHandlers(composition.handlers, log)

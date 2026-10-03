@@ -18,9 +18,9 @@ const indexerLabel = computed(() => {
     : t(`status.indexer.${state === 'importing' ? 'ready' : state}`)
 })
 const noticeText = computed(() => {
-  const key = notice.value?.messageKey
-  if (key === undefined) return undefined
-  return te(key) ? t(key) : t('errors.unknown')
+  const current = notice.value
+  if (current === undefined) return undefined
+  return te(current.messageKey) ? t(current.messageKey, current.params ?? {}) : t('errors.unknown')
 })
 </script>
 

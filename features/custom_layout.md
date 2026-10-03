@@ -15,6 +15,9 @@ ou de placer les panneaux là où on les veut. Thibault veut un outil « vraimen
   glisser-déposer Sessions, D. Fichiers, E. Snapshots et F. Fiche pour les réordonner
   ou les passer de la colonne de gauche à celle de droite.
 - **Activer / désactiver** chaque panneau et chaque colonne.
+- **Revoir le panneau « D. Fichiers », qui « n'est pas bon du tout »** (retour du 2026-10-03).
+  À préciser avec Thibault au moment de la planification : lisibilité des chemins tronqués, regroupement par dossier,
+  tri, accès au diff du fichier (lien avec F07, review façon PR).
 
 ## Pistes déjà proposées (à confirmer au moment de la planification)
 - Double-clic sur une bordure : largeur par défaut.

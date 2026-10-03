@@ -46,16 +46,28 @@ export class LiveSessions {
     return this.launch(projectPath, text, model, undefined)
   }
 
+  /** Session encore ouverte qu'Argos pilote pour cet identifiant, s'il y en a une. */
+  activeRunFor(sessionExternalId: string): string | undefined {
+    return [...this.runs.values()].find(
+      (state) => state.sessionExternalId === sessionExternalId && state.status !== 'ended' && state.status !== 'error',
+    )?.runId
+  }
+
   /** Reprend une session existante ; si Argos la pilote déjà, envoie simplement le message. */
   continue(sessionExternalId: string, projectPath: string, text: string, model?: string): string {
-    const active = [...this.runs.values()].find(
-      (state) => state.sessionExternalId === sessionExternalId && state.status !== 'ended' && state.status !== 'error',
-    )
+    const active = this.activeRunFor(sessionExternalId)
     if (active !== undefined) {
-      this.send(active.runId, text)
-      return active.runId
+      this.send(active, text)
+      return active
     }
     return this.launch(projectPath, text, model, sessionExternalId)
+  }
+
+  /** Projets dans lesquels un agent travaille ou attend une réponse. */
+  activeProjects(): readonly string[] {
+    return [...this.runs.values()]
+      .filter((state) => state.status === 'starting' || state.status === 'running' || state.status === 'waiting')
+      .map((state) => state.projectPath)
   }
 
   send(runId: string, text: string): void {

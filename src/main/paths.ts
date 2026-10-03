@@ -8,6 +8,7 @@ export interface AppPaths {
   readonly argosDb: string
   readonly backups: string
   readonly logs: string
+  readonly shadowGit: string
   readonly argosMigrations: string
   readonly indexMigrations: string
 }
@@ -21,6 +22,7 @@ export function resolveAppPaths(): AppPaths {
     argosDb: join(userData, 'argos.db'),
     backups: join(userData, 'backups'),
     logs: join(userData, 'logs'),
+    shadowGit: join(userData, 'shadow-git'),
     argosMigrations: migrationsFolder('argos'),
     indexMigrations: migrationsFolder('index'),
   }
