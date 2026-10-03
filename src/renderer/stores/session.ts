@@ -12,6 +12,8 @@ export const useSessionStore = defineStore('session', () => {
   const nextSeq = ref<number | null>(null)
   const loading = ref(false)
   const error = ref<ContractError | undefined>()
+  /** Vrai pendant un tour piloté par Argos : l'historique ne bouge pas, l'affichage en direct fait foi (F05). */
+  const frozen = ref(false)
 
   const blocks = computed(() => groupTimeline(entries.value))
   const hasMore = computed(() => nextSeq.value !== null)
@@ -85,7 +87,7 @@ export const useSessionStore = defineStore('session', () => {
     if (id === undefined || loading.value) return
     await guarded(async () => {
       detail.value = unwrap<'sessions.get'>(await argos.invoke('sessions.get', { sessionId: id }))
-      if (nextSeq.value !== null) return
+      if (nextSeq.value !== null || frozen.value) return
       const last = entries.value.at(-1)?.seq ?? -1
       const page = unwrap<'sessions.entries'>(await argos.invoke('sessions.entries', { sessionId: id, afterSeq: last }))
       if (sessionId.value !== id) return
@@ -98,5 +100,20 @@ export const useSessionStore = defineStore('session', () => {
     argos.on('index.updated', () => void refresh())
   }
 
-  return { sessionId, detail, entries, blocks, hasMore, loading, error, open, close, loadMore, loadUntil, watchIndex }
+  return {
+    sessionId,
+    detail,
+    entries,
+    blocks,
+    hasMore,
+    loading,
+    error,
+    frozen,
+    open,
+    close,
+    loadMore,
+    loadUntil,
+    refresh,
+    watchIndex,
+  }
 })

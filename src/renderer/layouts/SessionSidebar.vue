@@ -7,6 +7,7 @@ import SessionListItem from '../features/history/SessionListItem.vue'
 import { useHistoryStore } from '../stores/history'
 import { useAppStatusStore } from '../stores/app-status'
 import { useSearchStore } from '../stores/search'
+import { ACTIVE_STATUSES, useLiveStore } from '../stores/live'
 import UiButton from '../ui/UiButton.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiMarker from '../ui/UiMarker.vue'
@@ -15,6 +16,7 @@ import UiMarker from '../ui/UiMarker.vue'
 const history = useHistoryStore()
 const router = useRouter()
 const search = useSearchStore()
+const live = useLiveStore()
 const { projects, selectedProject, sessions, selectedSessionId, error } = storeToRefs(history)
 
 const filters = ['all', 'running', 'waiting', 'done'] as const
@@ -25,12 +27,40 @@ const shortcut = computed(() => (appStatus.info?.platform === 'darwin' ? '⌘K' 
 type Filter = (typeof filters)[number]
 const activeFilter = ref<Filter>('all')
 
-// Argos ne pilote pas encore de session (V1) : toutes les sessions importées sont terminées.
+// Statut d'une session de la liste : celui de la session pilotée par Argos, sinon terminée.
+const statusOf = (externalId: string) => {
+  const run = live.runForSession(externalId)
+  return run !== undefined && ACTIVE_STATUSES.includes(run.status) ? run.status : undefined
+}
+const isRunning = (externalId: string) => {
+  const status = statusOf(externalId)
+  return status === 'running' || status === 'starting'
+}
+const isWaiting = (externalId: string) => statusOf(externalId) === 'waiting'
+
 const total = computed(() => selectedProject.value?.sessionCount ?? 0)
-const counts = computed<Record<Filter, number>>(() => ({ all: total.value, running: 0, waiting: 0, done: total.value }))
-const visibleSessions = computed(() =>
-  activeFilter.value === 'running' || activeFilter.value === 'waiting' ? [] : sessions.value,
-)
+const liveCounts = computed(() => ({
+  running: sessions.value.filter((session) => isRunning(session.externalId)).length,
+  waiting: sessions.value.filter((session) => isWaiting(session.externalId)).length,
+}))
+const counts = computed<Record<Filter, number>>(() => ({
+  all: total.value,
+  running: liveCounts.value.running,
+  waiting: liveCounts.value.waiting,
+  done: Math.max(0, total.value - liveCounts.value.running - liveCounts.value.waiting),
+}))
+const visibleSessions = computed(() => {
+  switch (activeFilter.value) {
+    case 'running':
+      return sessions.value.filter((session) => isRunning(session.externalId))
+    case 'waiting':
+      return sessions.value.filter((session) => isWaiting(session.externalId))
+    case 'done':
+      return sessions.value.filter((session) => statusOf(session.externalId) === undefined)
+    default:
+      return sessions.value
+  }
+})
 
 const filterText = ref('')
 let debounce: ReturnType<typeof setTimeout> | undefined
@@ -61,7 +91,13 @@ async function chooseProject(projectId: number): Promise<void> {
 
     <div class="sidebar__block sidebar__heading">
       <UiMarker :label="`${$t('nav.sessions')} · ${total}`" />
-      <UiButton variant="ghost" shortcut="⌘N" disabled>+ {{ $t('nav.newSession') }}</UiButton>
+      <UiButton
+        variant="ghost"
+        :shortcut="shortcut === '⌘K' ? '⌘N' : 'Ctrl+N'"
+        :disabled="selectedProject === undefined"
+        @click="router.push({ name: 'new' })"
+        >+ {{ $t('nav.newSession') }}</UiButton
+      >
     </div>
 
     <nav class="sidebar__filters">
@@ -95,6 +131,7 @@ async function chooseProject(projectId: number): Promise<void> {
         :key="session.id"
         :session="session"
         :selected="session.id === selectedSessionId"
+        :live-status="statusOf(session.externalId)"
         @select="router.push({ name: 'session', params: { id: session.id } })"
       />
 
@@ -105,10 +142,10 @@ async function chooseProject(projectId: number): Promise<void> {
         :body="$t('projects.empty.body')"
       />
       <UiEmptyState
-        v-else-if="activeFilter === 'running' || activeFilter === 'waiting'"
+        v-else-if="visibleSessions.length === 0 && (activeFilter === 'running' || activeFilter === 'waiting')"
         size="small"
         :title="$t('sessions.empty.title')"
-        :body="$t('sessions.notRunInArgos')"
+        :body="$t('sessions.noLiveSession')"
       />
       <UiEmptyState v-else-if="visibleSessions.length === 0" size="small" :title="$t('sessions.noMatch')" />
     </div>

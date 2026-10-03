@@ -140,6 +140,14 @@ export class SqliteSessionQueries implements SessionQueries {
     return row?.known === 1
   }
 
+  getProject(projectId: number): ProjectRow | undefined {
+    return this.listProjects().find((project) => project.id === projectId)
+  }
+
+  findSessionIdByExternal(externalId: string): number | undefined {
+    return this.database.select({ id: sessions.id }).from(sessions).where(eq(sessions.externalId, externalId)).get()?.id
+  }
+
   countSessions(providerId: ProviderId): number {
     return (
       this.database.select({ count: count() }).from(sessions).where(eq(sessions.providerId, providerId)).get()?.count ??

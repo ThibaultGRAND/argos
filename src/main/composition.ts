@@ -8,7 +8,10 @@ import { GetIndexerStatus } from '../core/application/indexer/get-indexer-status
 import { GetPreferences } from '../core/application/preferences/get-preferences'
 import { UpdatePreferences } from '../core/application/preferences/update-preferences'
 import { ListProjects } from '../core/application/projects/list-projects'
+import { randomUUID } from 'node:crypto'
 import { OpenInEditor } from '../core/application/editor/open-in-editor'
+import { LiveCommands } from '../core/application/live/live-commands'
+import { LiveSessions, type LiveSessionsListener } from '../core/application/live/live-sessions'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
 import type { IndexerControl } from '../core/domain/ports/indexer-control'
@@ -17,6 +20,8 @@ import { openArgosDatabase } from '../infrastructure/database/argos/argos-databa
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
+import { ClaudeAgentRuntime } from '../infrastructure/providers/claude/claude-agent-runtime'
+import { findClaudeExecutable } from '../infrastructure/system/claude-executable'
 import { resolveClaudeProjectsDirectory } from '../infrastructure/system/claude-paths'
 import { ElectronEditorLauncher } from './adapters/electron-editor-launcher'
 import { ElectronAppMetadata } from './adapters/electron-app-metadata'
@@ -29,8 +34,17 @@ export interface Composition {
   dispose(): void
 }
 
+export interface CompositionContext {
+  readonly paths: AppPaths
+  readonly indexer: IndexerMonitor & IndexerControl & { requestImport(): void }
+  /** Environnement du shell de connexion, transmis aux agents (F05). */
+  readonly environment: NodeJS.ProcessEnv
+  readonly liveListener: Pick<LiveSessionsListener, 'onEvent'>
+  readonly log: (message: string) => void
+}
+
 /** Racine de composition : branche les adaptateurs sur les cas d'usage (injection manuelle). */
-export function compose(paths: AppPaths, indexer: IndexerMonitor & IndexerControl): Composition {
+export function compose({ paths, indexer, environment, liveListener, log }: CompositionContext): Composition {
   const argosDb = openArgosDatabase({
     path: paths.argosDb,
     migrationsFolder: paths.argosMigrations,
@@ -68,6 +82,23 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor & IndexerContro
   )
   const rebuildIndex = new RebuildIndex(indexer)
 
+  const executable = findClaudeExecutable(environment)
+  log(executable === undefined ? 'CLI claude introuvable : binaire du SDK utilisé' : `CLI claude : ${executable}`)
+  const liveSessions = new LiveSessions(
+    new ClaudeAgentRuntime({ executable, environment }),
+    {
+      onEvent: (runId, event) => {
+        liveListener.onEvent(runId, event)
+        // Dès que la session a un identifiant, son fichier existe : l'import la fait apparaître dans la liste.
+        if (event.type === 'identified') indexer.requestImport()
+      },
+      // Fin d'un tour : la CLI a écrit l'historique, l'import le reprend aussitôt (PLAN.md §2.3, flux D).
+      onTurnCompleted: () => indexer.requestImport(),
+    },
+    randomUUID,
+  )
+  const liveCommands = new LiveCommands(liveSessions, sessionQueries)
+
   const handlers: RequestHandlers = {
     'app.info': () => getAppInfo.execute(),
     'preferences.get': () => getPreferences.execute(),
@@ -103,6 +134,30 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor & IndexerContro
       rebuildIndex.execute()
       return undefined
     },
+    'live.start': ({ projectId, text, model }) => ({ runId: liveCommands.startInProject(projectId, text, model) }),
+    'live.continue': ({ sessionId, text, model }) => ({
+      runId: liveCommands.continueSession(sessionId, text, model),
+    }),
+    'live.send': ({ runId, text }) => {
+      liveSessions.send(runId, text)
+      return undefined
+    },
+    'live.interrupt': async ({ runId }) => {
+      await liveSessions.interrupt(runId)
+      return undefined
+    },
+    'live.stop': ({ runId }) => {
+      liveSessions.stop(runId)
+      return undefined
+    },
+    'live.answer': ({ runId, requestId, decision }) => {
+      liveSessions.answer(runId, requestId, decision)
+      return undefined
+    },
+    'live.list': () => liveSessions.list().map((run) => ({ ...run, pendingPermissions: [...run.pendingPermissions] })),
+    'sessions.findByExternal': ({ externalId }) => ({
+      sessionId: sessionQueries.findSessionIdByExternal(externalId) ?? null,
+    }),
     'links.open': async ({ url }) => {
       await openExternalLink.execute(url)
       return undefined
@@ -112,6 +167,7 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor & IndexerContro
   return {
     handlers,
     dispose: () => {
+      liveSessions.stopAll()
       sessionQueries.close()
       argosDb.close()
     },

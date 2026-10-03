@@ -111,15 +111,8 @@ function mapUser(entry: JsonRecord, timestamp: string): HistoryEvent[] {
   for (const block of asArray(content)) {
     if (!isRecord(block)) continue
     if (block['type'] === 'tool_result') {
-      const toolUseId = asString(block['tool_use_id'])
-      if (toolUseId === undefined) continue
-      events.push({
-        type: 'tool-result',
-        toolCallExternalId: toolUseId,
-        status: block['is_error'] === true ? 'error' : 'success',
-        fileChanges: fileChanges(entry['toolUseResult']),
-        occurredAt: timestamp,
-      })
+      const result = toolResult(block, entry['toolUseResult'], timestamp)
+      if (result !== undefined) events.push(result)
     } else if (block['type'] === 'text') {
       const text = userText(asString(block['text']) ?? '')
       if (text !== undefined) texts.push(text)
@@ -131,6 +124,23 @@ function mapUser(entry: JsonRecord, timestamp: string): HistoryEvent[] {
     events.unshift({ type: 'user-message', externalId, text: texts.join('\n\n'), occurredAt: timestamp })
   }
   return events
+}
+
+/**
+ * Résultat d'outil : bloc `tool_result` du message, et résultat structuré de l'outil
+ * (`toolUseResult` dans les JSONL, `tool_use_result` dans l'Agent SDK) pour compter les lignes modifiées.
+ */
+export function toolResult(block: unknown, structured: unknown, timestamp: string): HistoryEvent | undefined {
+  if (!isRecord(block) || block['type'] !== 'tool_result') return undefined
+  const toolUseId = asString(block['tool_use_id'])
+  if (toolUseId === undefined) return undefined
+  return {
+    type: 'tool-result',
+    toolCallExternalId: toolUseId,
+    status: block['is_error'] === true ? 'error' : 'success',
+    fileChanges: fileChanges(structured),
+    occurredAt: timestamp,
+  }
 }
 
 /** Texte d'un message de l'utilisateur, ou `undefined` s'il s'agit d'un message technique. */
@@ -148,11 +158,17 @@ function userText(raw: string): string | undefined {
 }
 
 function mapAssistant(entry: JsonRecord, timestamp: string): HistoryEvent[] {
-  const message = entry['message']
+  return mapAssistantContent(entry['message'], asString(entry['uuid']) ?? `${timestamp}-assistant`, timestamp)
+}
+
+/**
+ * Blocs d'un message de l'agent (format de l'API Messages), communs aux JSONL de la CLI et à l'Agent SDK.
+ * Le texte devient `assistant-message`, les `tool_use` deviennent `tool-call` ; la réflexion est ignorée.
+ */
+export function mapAssistantContent(message: unknown, uuid: string, timestamp: string): HistoryEvent[] {
   if (!isRecord(message)) return []
   const rawModel = asString(message['model'])
   const model = rawModel === undefined || rawModel.startsWith('<') ? undefined : rawModel
-  const uuid = asString(entry['uuid']) ?? `${timestamp}-assistant`
 
   const events: HistoryEvent[] = []
   for (const [position, block] of asArray(message['content']).entries()) {

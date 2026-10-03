@@ -14,6 +14,15 @@ import { IndexerStatusSchema } from './indexer'
 import { PreferencesSchema, PreferencesUpdateSchema } from './preferences'
 import { SearchInputSchema, SearchResultsSchema } from './search'
 import { EnvironmentSchema, OpenInEditorInputSchema } from './settings'
+import {
+  LiveAnswerInputSchema,
+  LiveContinueInputSchema,
+  LiveSendInputSchema,
+  LiveStartInputSchema,
+  RunIdInputSchema,
+  RunIdOutputSchema,
+  RunSummarySchema,
+} from './live'
 
 interface RequestDefinition {
   readonly input: z.ZodType
@@ -36,6 +45,17 @@ export const requests = {
   'editor.open': { input: OpenInEditorInputSchema, output: z.undefined() },
   'settings.environment': { input: z.undefined(), output: EnvironmentSchema },
   'index.rebuild': { input: z.undefined(), output: z.undefined() },
+  'live.start': { input: LiveStartInputSchema, output: RunIdOutputSchema },
+  'live.continue': { input: LiveContinueInputSchema, output: RunIdOutputSchema },
+  'live.send': { input: LiveSendInputSchema, output: z.undefined() },
+  'live.interrupt': { input: RunIdInputSchema, output: z.undefined() },
+  'live.stop': { input: RunIdInputSchema, output: z.undefined() },
+  'live.answer': { input: LiveAnswerInputSchema, output: z.undefined() },
+  'live.list': { input: z.undefined(), output: z.array(RunSummarySchema) },
+  'sessions.findByExternal': {
+    input: z.object({ externalId: z.string() }),
+    output: z.object({ sessionId: z.number().int().nullable() }),
+  },
   'search.query': { input: SearchInputSchema, output: SearchResultsSchema },
   'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>

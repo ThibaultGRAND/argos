@@ -7,6 +7,7 @@ import AppShell from './layouts/AppShell.vue'
 import { useAppStatusStore } from './stores/app-status'
 import { useHistoryStore } from './stores/history'
 import { useSearchStore } from './stores/search'
+import { useLiveStore } from './stores/live'
 import { useSessionStore } from './stores/session'
 import { usePreferencesStore } from './stores/preferences'
 
@@ -16,6 +17,7 @@ const history = useHistoryStore()
 const session = useSessionStore()
 const search = useSearchStore()
 const router = useRouter()
+const live = useLiveStore()
 const ready = ref(false)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -25,6 +27,11 @@ const macos = computed(() => appStatus.info?.platform === 'darwin')
  */
 function onGlobalKeydown(event: KeyboardEvent): void {
   const modifier = macos.value ? event.metaKey : event.ctrlKey
+  if (modifier && event.key.toLowerCase() === 'n') {
+    event.preventDefault()
+    void router.push({ name: 'new' })
+    return
+  }
   if (modifier && event.key === ',') {
     event.preventDefault()
     void router.push({ name: 'settings' })
@@ -43,6 +50,7 @@ onMounted(async () => {
   window.addEventListener('keydown', onGlobalKeydown)
   await Promise.all([preferences.load(), appStatus.load()])
   history.watchIndex()
+  await live.load()
   session.watchIndex()
   await history.loadProjects()
   ready.value = true

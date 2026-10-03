@@ -24,9 +24,9 @@
     },
     "untitled": "Untitled session",
     "noMatch": "No matching session",
-    "notRunInArgos": "Argos does not run sessions yet: this list will fill up with V1.",
     "files": "{count} f.",
-    "loadError": "Could not load sessions."
+    "loadError": "Could not load sessions.",
+    "noLiveSession": "No session run by Argos in this state."
   },
   "document": {
     "empty": {
@@ -114,7 +114,12 @@
     "unknown_request": "This action does not exist.",
     "unsafe_link": "This link cannot be opened.",
     "unknown_path": "Argos only opens files from your projects.",
-    "file_not_found": "This file no longer exists."
+    "file_not_found": "This file no longer exists.",
+    "run_not_found": "Argos is no longer running this session.",
+    "run_ended": "This session has ended.",
+    "permission_not_found": "This request has already been answered.",
+    "project_not_found": "Project not found.",
+    "session_not_found": "Session not found."
   },
   "providers": {
     "claude": "Claude Code",
@@ -190,5 +195,37 @@
     "title": "Choisissez votre langue",
     "subtitle": "Choose your language",
     "hint": "You can change it later in the settings."
+  },
+  "live": {
+    "placeholder": "Write the next instruction…",
+    "model": "Model",
+    "models": {
+      "default": "Default",
+      "opus": "Opus",
+      "sonnet": "Sonnet",
+      "haiku": "Haiku"
+    },
+    "send": "Send",
+    "pause": "Pause",
+    "stop": "Stop",
+    "working": "The agent is working…",
+    "noProject": "Pick a project in the sidebar first.",
+    "newMarker": "New session / {project}",
+    "newTitle": "New session",
+    "status": {
+      "starting": "Starting",
+      "running": "Running",
+      "waiting": "Needs action",
+      "idle": "Ready",
+      "ended": "Ended",
+      "error": "Error"
+    },
+    "permission": {
+      "label": "Permission requested",
+      "fallback": "The agent wants to use {tool}",
+      "allow": "Allow",
+      "allowSession": "Always allow for this session",
+      "deny": "Deny"
+    }
   }
 }

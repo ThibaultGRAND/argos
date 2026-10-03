@@ -16,10 +16,18 @@ export const requestNames = [
   'editor.open',
   'settings.environment',
   'index.rebuild',
+  'live.start',
+  'live.continue',
+  'live.send',
+  'live.interrupt',
+  'live.stop',
+  'live.answer',
+  'live.list',
+  'sessions.findByExternal',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 
-export const eventNames = ['indexer.status', 'index.updated'] as const
+export const eventNames = ['indexer.status', 'index.updated', 'live.event'] as const
 export type EventName = (typeof eventNames)[number]
 
 export const requestChannel = (name: RequestName): string => `argos:request:${name}`

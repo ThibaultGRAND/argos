@@ -49,6 +49,14 @@ export class ReadOnlySessionQueries implements SessionQueries, SearchQueries {
     return this.open()?.isKnownPath(path) ?? false
   }
 
+  getProject(projectId: number): ProjectRow | undefined {
+    return this.open()?.getProject(projectId)
+  }
+
+  findSessionIdByExternal(externalId: string): number | undefined {
+    return this.open()?.findSessionIdByExternal(externalId)
+  }
+
   countSessions(providerId: ProviderId): number {
     return this.open()?.countSessions(providerId) ?? 0
   }

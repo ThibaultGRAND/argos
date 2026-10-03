@@ -74,4 +74,6 @@ export interface SessionQueries {
   /** Vrai si le chemin est dans un projet connu, ou est un fichier modifié présent dans l'index. */
   isKnownPath(path: string): boolean
   countSessions(providerId: ProviderId): number
+  getProject(projectId: number): ProjectRow | undefined
+  findSessionIdByExternal(externalId: string): number | undefined
 }

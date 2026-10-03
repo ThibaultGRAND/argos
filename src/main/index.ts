@@ -4,6 +4,9 @@ import { app, BrowserWindow } from 'electron'
 import { compose, type Composition } from './composition'
 import { broadcast, registerRequestHandlers } from './ipc/register'
 import { IndexerSupervisor } from './indexer-supervisor'
+import type { LiveEvent } from '../core/domain/live/live-events'
+import { loadShellEnvironment } from '../infrastructure/system/shell-environment'
+import type { LiveEventDto } from '../shared/contract'
 import { resolveAppPaths } from './paths'
 import { createMainWindow } from './windows/main-window'
 
@@ -20,7 +23,7 @@ let composition: Composition | undefined
 let indexer: IndexerSupervisor | undefined
 
 app.whenReady().then(
-  () => {
+  async () => {
     const paths = resolveAppPaths()
     // Journal technique uniquement : jamais de contenu de conversation (PLAN.md §2.4).
     const log = (message: string): void => {
@@ -32,7 +35,15 @@ app.whenReady().then(
       onIndexUpdated: (sessionsChanged) => broadcast('index.updated', { sessionsChanged }),
       log,
     })
-    composition = compose(paths, indexer)
+    // Environnement du terminal (PATH…) pour que les agents trouvent leurs outils, même lancé depuis le Finder.
+    const environment = await loadShellEnvironment()
+    composition = compose({
+      paths,
+      indexer,
+      environment,
+      liveListener: { onEvent: (runId, event) => broadcast('live.event', { runId, event: toLiveEventDto(event) }) },
+      log,
+    })
     registerRequestHandlers(composition.handlers, log)
     indexer.start()
 
@@ -61,3 +72,8 @@ app.on('before-quit', () => {
   indexer?.stop()
   composition?.dispose()
 })
+
+/** Les événements du domaine sont en lecture seule ; le contrat IPC attend des tableaux modifiables. */
+function toLiveEventDto(event: LiveEvent): LiveEventDto {
+  return event.type === 'tool-result' ? { ...event, fileChanges: [...event.fileChanges] } : event
+}

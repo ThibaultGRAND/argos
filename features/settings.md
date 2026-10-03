@@ -1,6 +1,6 @@
 # F16 — Paramètres et premier lancement
 
-**Statut** : à tester
+**Statut** : terminé
 **Version cible** : V0
 **Dépend de** : [socle_projet.md](socle_projet.md), [session_import.md](session_import.md)
 **Écrans** : nouvel écran « Paramètres » (absent de la maquette, décrit ci-dessous dans le style C1) ; fenêtre de premier lancement

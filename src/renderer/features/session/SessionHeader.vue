@@ -6,17 +6,33 @@ import { storeToRefs } from 'pinia'
 import { openInEditor } from '../../services/editor'
 import { useNoticesStore } from '../../stores/notices'
 import { usePreferencesStore } from '../../stores/preferences'
+import LiveStatusBadge from '../live/LiveStatusBadge.vue'
+import { useLiveStore, type LiveRunView } from '../../stores/live'
 import UiButton from '../../ui/UiButton.vue'
 import UiMarker from '../../ui/UiMarker.vue'
 import { formatDuration, formatModel } from '../../utils/format'
 
 /** En-tête façon fiche : repère, titre en grand, métadonnées en monospace. */
-const props = defineProps<{ detail: SessionDetailDto }>()
+const props = defineProps<{ detail: SessionDetailDto; run?: LiveRunView | undefined }>()
 const { t } = useI18n()
 const notices = useNoticesStore()
 const { preferences } = storeToRefs(usePreferencesStore())
 
 const openLabel = computed(() => t('editor.openIn', { editor: t(`editors.${preferences.value.editor}`) }))
+
+const live = useLiveStore()
+const canPause = computed(() => props.run?.status === 'running' || props.run?.status === 'waiting')
+const canStop = computed(() => props.run !== undefined && props.run.status !== 'ended')
+
+function pause(): void {
+  const run = props.run
+  if (run !== undefined) void notices.attempt(() => live.interrupt(run.runId))
+}
+
+function stop(): void {
+  const run = props.run
+  if (run !== undefined) void notices.attempt(() => live.stop(run.runId))
+}
 
 function openProject(): void {
   void notices.attempt(() => openInEditor(props.detail.projectPath))
@@ -41,12 +57,17 @@ const meta = computed(() =>
   <header class="header">
     <div class="header__top">
       <UiMarker :label="marker" />
-      <UiButton @click="openProject">{{ openLabel }}</UiButton>
+      <div class="header__actions">
+        <UiButton @click="openProject">{{ openLabel }}</UiButton>
+        <UiButton v-if="canPause" @click="pause">{{ t('live.pause') }}</UiButton>
+        <UiButton v-if="canStop" @click="stop">{{ t('live.stop') }}</UiButton>
+      </div>
     </div>
     <h1 class="header__title" :class="{ 'header__title--untitled': detail.title === null }">
       {{ detail.title ?? t('sessions.untitled') }}
     </h1>
     <p class="header__meta">
+      <LiveStatusBadge v-if="run && run.status !== 'ended'" :status="run.status" />
       <span>{{ meta }}</span>
       <span v-if="detail.filesChanged > 0" class="header__changes">
         <span class="header__added">+{{ detail.linesAdded }}</span>
@@ -67,6 +88,11 @@ const meta = computed(() =>
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.header__actions {
+  display: flex;
+  gap: 6px;
 }
 
 .header__title {

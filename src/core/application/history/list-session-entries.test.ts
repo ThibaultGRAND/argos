@@ -20,6 +20,8 @@ function queriesWith(rows: (MessageRow | ToolCallRow)[]): SessionQueries {
     listEntries: (_id, afterSeq, limit) => rows.filter((row) => row.seq > afterSeq).slice(0, limit),
     isKnownPath: () => false,
     countSessions: () => 0,
+    getProject: () => undefined,
+    findSessionIdByExternal: () => undefined,
   }
 }
 

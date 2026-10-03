@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SessionSummaryDto } from '@shared/contract'
+import type { LiveStatusDto, SessionSummaryDto } from '@shared/contract'
+import LiveStatusBadge from '../live/LiveStatusBadge.vue'
 import { formatModel, formatWhen } from '../../utils/format'
 
 /** Une session dans la liste : date, titre, extrait, fournisseur et modèle, fichiers modifiés. */
-const props = defineProps<{ session: SessionSummaryDto; selected: boolean }>()
+const props = defineProps<{ session: SessionSummaryDto; selected: boolean; liveStatus?: LiveStatusDto | undefined }>()
 defineEmits<{ select: [] }>()
 
 const { t, locale } = useI18n()
@@ -19,7 +20,10 @@ const providerAndModel = computed(() => {
 
 <template>
   <button type="button" class="item" :class="{ 'item--selected': selected }" @click="$emit('select')">
-    <span class="item__when">{{ when }}</span>
+    <span class="item__top">
+      <span class="item__when">{{ when }}</span>
+      <LiveStatusBadge v-if="liveStatus" :status="liveStatus" />
+    </span>
     <span class="item__title" :class="{ 'item__title--untitled': session.title === null }">
       {{ session.title ?? t('sessions.untitled') }}
     </span>
@@ -57,6 +61,13 @@ const providerAndModel = computed(() => {
 .item--selected {
   border-left-color: var(--acc);
   background: var(--sel-bg);
+}
+
+.item__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .item__when,

@@ -1,6 +1,6 @@
 # F04 — Ouvrir dans l'éditeur
 
-**Statut** : à tester
+**Statut** : terminé
 **Version cible** : V0
 **Dépend de** : [session_detail.md](session_detail.md), [settings.md](settings.md) (choix de l'éditeur)
 **Écrans** : bouton « Ouvrir dans VSCode » de l'en-tête de session (maquette 2a) ; fichiers du panneau D cliquables

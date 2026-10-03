@@ -12,6 +12,8 @@ const queries = (known: string[]): SessionQueries => ({
   listEntries: () => [],
   isKnownPath: (path) => known.includes(path),
   countSessions: () => 0,
+  getProject: () => undefined,
+  findSessionIdByExternal: () => undefined,
 })
 
 function setup(known: string[], existing: string[]) {

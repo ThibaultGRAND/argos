@@ -212,6 +212,7 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 - **Navigation : Vue Router** (mode hash).
 - **Markdown : markdown-it** (HTML brut et images désactivés) pour les réponses des agents,
   **coloration syntaxique : highlight.js** (langages courants, couleurs issues des tokens C1).
+- **Pilotage des agents : Claude Agent SDK**, exécuté avec la CLI `claude` installée (binaire du SDK en secours, jamais embarqué).
 - **Validation : Zod** pour le contrat IPC (entrées et événements), types TypeScript déduits des schémas.
 - **Build et packaging : electron-vite + electron-builder.**
 - **Base de données : SQLite (better-sqlite3) + Drizzle ORM** (règles en §5.2).

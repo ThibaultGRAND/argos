@@ -513,8 +513,8 @@ Les versions cibles sont **validées** (voir §5).
 | F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | terminé | [features/session_import.md](features/session_import.md) |
 | F02 | Navigateur d'historique : compte rendu d'une session | V0 | terminé | [features/session_detail.md](features/session_detail.md) |
 | F03 | Recherche plein texte | V0 | terminé | [features/full_text_search.md](features/full_text_search.md) |
-| F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | à tester | [features/open_in_editor.md](features/open_in_editor.md) |
-| F05 | Lancer et piloter une session d'agent | V1 | à définir | `features/agent_sessions.md` |
+| F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | terminé | [features/open_in_editor.md](features/open_in_editor.md) |
+| F05 | Lancer et piloter une session d'agent | V1 | à tester | [features/agent_sessions.md](features/agent_sessions.md) |
 | F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à définir | `features/agent_snapshots.md` |
 | F07 | Review façon PR | V1 | à définir | `features/pr_review.md` |
 | F08 | Jauge de contexte et d'usage | V1 | à définir | `features/usage_gauge.md` |
@@ -525,7 +525,7 @@ Les versions cibles sont **validées** (voir §5).
 | F13 | Vue d'activité des agents | V3 | à définir | `features/agent_activity.md` |
 | F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à définir | `features/notifications.md` |
 | F15 | Multi-fournisseur complet via ACP (Codex, Gemini) | V3 | à définir | `features/providers.md` |
-| F16 | Paramètres et premier lancement (langue, thème, éditeur, sources, reconstruction de l'index) | V0 | à tester | [features/settings.md](features/settings.md) |
+| F16 | Paramètres et premier lancement (langue, thème, éditeur, sources, reconstruction de l'index) | V0 | terminé | [features/settings.md](features/settings.md) |
 
 ## 5. Roadmap
 
@@ -545,6 +545,14 @@ Les versions cibles sont **validées** (voir §5).
 **Pas dans V0** : lancer un agent, modifier quoi que ce soit dans les projets.
 
 **Pourquoi d'abord** : lecture seule, donc sans risque. Valide l'interface, l'import et la base de données sur de vraies données.
+
+**Bilan (2026-10-03) — V0 terminée.**
+- ✅ Sessions rangées par projet : 127 sessions Claude Code, 25 projets, mise à jour en direct.
+- ✅ Recherche : résultats en moins de 200 ms, ouverture au message exact.
+- ✅ Ouvrir dans l'éditeur (VSCode, Cursor, VSCodium) : chemins hors projets refusés.
+- ✅ macOS : app de développement et app packagée (DMG) ; Windows et Linux : vérification complète et build verts dans la CI GitHub.
+- En plus du plan : rendu Markdown et coloration syntaxique des réponses, paramètres complets, choix de la langue au premier lancement.
+- À surveiller : import complet en ~20 s depuis l'index plein texte ; alerte Dependabot sur esbuild (outil de développement, non embarqué dans l'app).
 
 ### V1 — Agir
 **Objectif** : lancer et relire mes sessions dans l'app au lieu du terminal.
@@ -617,7 +625,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
 | 6 | Architecture globale | PLAN.md §2 | terminée |
 | 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | terminée |
-| 7b | **Dépôt GitHub** : dépôt public `ThibaultGRAND/argos`, licence MIT, ruleset sur `main`, fichiers d'accueil des contributeurs, sécurité gratuite | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/` | en cours |
+| 7b | **Dépôt GitHub** : dépôt public `ThibaultGRAND/argos`, licence MIT, ruleset sur `main`, fichiers d'accueil des contributeurs, sécurité gratuite | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/` | terminée |
 | 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la validation du plan de l'étape 0 (socle).
@@ -662,3 +670,4 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-03 | Licence **MIT** | PolyForm Perimeter (interdit la revente mais n'est pas open source), GPL v3 (autorise la revente si le code source est fourni) | Vraiment open source, simple ; chacun fait ce qu'il veut, y compris vendre |
 | 2026-10-03 | `main` protégée par un **ruleset** : PR obligatoire, 1 approbation, ni push forcé ni suppression, contournement réservé à l'admin (Thibault) ; seul Thibault fusionne | Protection de branche classique ; amis avec droit d'écriture | Rulesets plus souples et visibles de tous ; Thibault reste seul à décider de ce qui entre dans `main` |
 | 2026-10-03 | Fichiers du projet en **anglais**, avec une version française de `README` et `CONTRIBUTING` ; aucune politique spécifique sur le code écrit par IA | Tout en français ; tout bilingue | Ouvert aux contributeurs non francophones sans doubler toute la maintenance |
+| 2026-10-03 | Pilotage de Claude avec l'**Agent SDK** (`@anthropic-ai/claude-agent-sdk` + `@anthropic-ai/sdk` + `@modelcontextprotocol/sdk`), exécuté avec la CLI `claude` installée | CLI en mode `-p` avec flux JSON | Permissions dans Argos (`canUseTool`), interruption, reprise et modèles fournis ; la CLI installée reste l'exécutable |

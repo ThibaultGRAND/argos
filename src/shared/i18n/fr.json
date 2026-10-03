@@ -24,9 +24,9 @@
     },
     "untitled": "Session sans titre",
     "noMatch": "Aucune session ne correspond",
-    "notRunInArgos": "Argos ne pilote pas encore de session : cette liste se remplira avec la V1.",
     "files": "{count} f.",
-    "loadError": "Impossible de charger les sessions."
+    "loadError": "Impossible de charger les sessions.",
+    "noLiveSession": "Aucune session pilotée par Argos dans cet état."
   },
   "document": {
     "empty": {
@@ -114,7 +114,12 @@
     "unknown_request": "Cette action n'existe pas.",
     "unsafe_link": "Ce lien ne peut pas être ouvert.",
     "unknown_path": "Argos n'ouvre que les fichiers de tes projets.",
-    "file_not_found": "Ce fichier n'existe plus."
+    "file_not_found": "Ce fichier n'existe plus.",
+    "run_not_found": "Cette session n'est plus pilotée par Argos.",
+    "run_ended": "Cette session est terminée.",
+    "permission_not_found": "Cette demande a déjà reçu une réponse.",
+    "project_not_found": "Projet introuvable.",
+    "session_not_found": "Session introuvable."
   },
   "providers": {
     "claude": "Claude Code",
@@ -190,5 +195,37 @@
     "title": "Choisissez votre langue",
     "subtitle": "Choose your language",
     "hint": "Modifiable ensuite dans les paramètres."
+  },
+  "live": {
+    "placeholder": "Écrire la prochaine consigne…",
+    "model": "Modèle",
+    "models": {
+      "default": "Par défaut",
+      "opus": "Opus",
+      "sonnet": "Sonnet",
+      "haiku": "Haiku"
+    },
+    "send": "Envoyer",
+    "pause": "Pause",
+    "stop": "Arrêter",
+    "working": "L'agent travaille…",
+    "noProject": "Choisissez d'abord un projet dans la barre latérale.",
+    "newMarker": "Nouvelle session / {project}",
+    "newTitle": "Nouvelle session",
+    "status": {
+      "starting": "Démarrage",
+      "running": "En cours",
+      "waiting": "Attend une action",
+      "idle": "Prête",
+      "ended": "Terminée",
+      "error": "Erreur"
+    },
+    "permission": {
+      "label": "Permission demandée",
+      "fallback": "L'agent veut utiliser {tool}",
+      "allow": "Autoriser",
+      "allowSession": "Toujours autoriser pour cette session",
+      "deny": "Refuser"
+    }
   }
 }
