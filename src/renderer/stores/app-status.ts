@@ -5,13 +5,13 @@ import { argos, unwrap } from '../services/argos'
 
 export const useAppStatusStore = defineStore('app-status', () => {
   const info = ref<AppInfoDto | undefined>()
-  const indexer = ref<IndexerStatusDto['state']>('starting')
+  const indexer = ref<IndexerStatusDto>({ state: 'starting' })
 
   async function load(): Promise<void> {
     info.value = unwrap<'app.info'>(await argos.invoke('app.info'))
-    indexer.value = unwrap<'indexer.status'>(await argos.invoke('indexer.status')).state
+    indexer.value = unwrap<'indexer.status'>(await argos.invoke('indexer.status'))
     argos.on('indexer.status', (status) => {
-      indexer.value = status.state
+      indexer.value = status
     })
   }
 

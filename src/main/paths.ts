@@ -9,6 +9,7 @@ export interface AppPaths {
   readonly backups: string
   readonly logs: string
   readonly argosMigrations: string
+  readonly indexMigrations: string
 }
 
 /** Emplacements par OS, toujours obtenus par Electron (PLAN.md §2.4). */
@@ -20,11 +21,17 @@ export function resolveAppPaths(): AppPaths {
     argosDb: join(userData, 'argos.db'),
     backups: join(userData, 'backups'),
     logs: join(userData, 'logs'),
-    argosMigrations: app.isPackaged
-      ? join(process.resourcesPath, 'migrations', 'argos')
-      : join(app.getAppPath(), 'src', 'infrastructure', 'database', 'argos', 'migrations'),
+    argosMigrations: migrationsFolder('argos'),
+    indexMigrations: migrationsFolder('index'),
   }
   mkdirSync(paths.userData, { recursive: true })
   mkdirSync(paths.logs, { recursive: true })
   return paths
+}
+
+/** Les migrations sont copiées dans les ressources de l'app packagée (electron-builder.yml). */
+function migrationsFolder(database: 'argos' | 'index'): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'migrations', database)
+    : join(app.getAppPath(), 'src', 'infrastructure', 'database', database, 'migrations')
 }

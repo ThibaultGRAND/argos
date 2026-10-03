@@ -14,3 +14,10 @@ export function openSqlite(path: string): SqliteConnection {
   connection.pragma('synchronous = NORMAL')
   return connection
 }
+
+/** Ouvre une base existante en lecture seule (le processus principal lit index.db sans jamais l'écrire). */
+export function openSqliteReadOnly(path: string): SqliteConnection {
+  const connection = new Database(path, { readonly: true, fileMustExist: true })
+  connection.pragma('busy_timeout = 5000')
+  return connection
+}

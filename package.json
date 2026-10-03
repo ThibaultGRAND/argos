@@ -23,7 +23,8 @@
     "test": "vitest run",
     "check:architecture": "depcruise src --config .dependency-cruiser.cjs",
     "db:generate:argos": "drizzle-kit generate --config drizzle.argos.config.ts",
-    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:architecture && npm run test"
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:architecture && npm run test",
+    "db:generate:index": "drizzle-kit generate --config drizzle.index.config.ts"
   },
   "dependencies": {
     "@intlify/core": "11.4.13",

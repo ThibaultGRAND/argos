@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AppInfoSchema } from './app'
 import type { RequestName } from './channels'
+import { ListSessionsInputSchema, ProjectSummarySchema, SessionSummarySchema } from './history'
 import { IndexerStatusSchema } from './indexer'
 import { PreferencesSchema, PreferencesUpdateSchema } from './preferences'
 
@@ -18,6 +19,8 @@ export const requests = {
   'preferences.get': { input: z.undefined(), output: PreferencesSchema },
   'preferences.update': { input: PreferencesUpdateSchema, output: PreferencesSchema },
   'indexer.status': { input: z.undefined(), output: IndexerStatusSchema },
+  'projects.list': { input: z.undefined(), output: z.array(ProjectSummarySchema) },
+  'sessions.list': { input: ListSessionsInputSchema, output: z.array(SessionSummarySchema) },
 } as const satisfies Record<RequestName, RequestDefinition>
 
 export type Requests = typeof requests

@@ -1,6 +1,6 @@
 # Étape 0 — Socle du projet
 
-**Statut** : à tester
+**Statut** : terminé
 **Version cible** : avant V0
 **Dépend de** : PLAN.md §2 (architecture) et §3 (stack)
 **Écrans** : coquille de la maquette globale 2a, sans contenu fonctionnel

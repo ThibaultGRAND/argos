@@ -10,6 +10,8 @@ files:
 extraResources:
   - from: src/infrastructure/database/argos/migrations
     to: migrations/argos
+  - from: src/infrastructure/database/index/migrations
+    to: migrations/index
 asar: true
 npmRebuild: true
 mac:

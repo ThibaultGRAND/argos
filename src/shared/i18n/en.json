@@ -6,7 +6,9 @@
     "search": "Search",
     "sessions": "Sessions",
     "newSession": "New",
-    "noProject": "No project"
+    "noProject": "No project",
+    "chooseProject": "Choose a project",
+    "sessionsCount": "{count} session | {count} sessions"
   },
   "sessions": {
     "filters": {
@@ -19,7 +21,12 @@
     "empty": {
       "title": "No sessions",
       "body": "Your agents' sessions will appear here once imported."
-    }
+    },
+    "untitled": "Untitled session",
+    "noMatch": "No matching session",
+    "notRunInArgos": "Argos does not run sessions yet: this list will fill up with V1.",
+    "files": "{count} f.",
+    "loadError": "Could not load sessions."
   },
   "document": {
     "empty": {
@@ -38,7 +45,8 @@
     "indexer": {
       "starting": "Indexer: starting",
       "ready": "Indexer: ready",
-      "error": "Indexer: error"
+      "error": "Indexer: error",
+      "importing": "Importing {done} / {total}"
     },
     "theme": {
       "label": "Theme",
@@ -56,5 +64,16 @@
     "unknown": "An unexpected error occurred.",
     "invalid_input": "The request is invalid.",
     "unknown_request": "This action does not exist."
+  },
+  "providers": {
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "gemini": "Gemini CLI"
+  },
+  "projects": {
+    "empty": {
+      "title": "No projects",
+      "body": "No Claude Code session found on this machine yet."
+    }
   }
 }

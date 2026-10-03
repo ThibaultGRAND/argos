@@ -27,7 +27,11 @@ app.whenReady().then(
       appendFileSync(join(paths.logs, 'main.log'), `${new Date().toISOString()} ${message}\n`)
     }
 
-    indexer = new IndexerSupervisor(paths.indexDb, (state) => broadcast('indexer.status', { state }), log)
+    indexer = new IndexerSupervisor(paths.indexDb, paths.indexMigrations, {
+      onStatusChange: (status) => broadcast('indexer.status', status),
+      onIndexUpdated: (sessionsChanged) => broadcast('index.updated', { sessionsChanged }),
+      log,
+    })
     composition = compose(paths, indexer)
     registerRequestHandlers(composition.handlers, log)
     indexer.start()

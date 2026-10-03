@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useI18n } from 'vue-i18n'
 import type { PreferencesDto } from '@shared/contract'
 import { useAppStatusStore } from '../stores/app-status'
 import { usePreferencesStore } from '../stores/preferences'
 
+const { t } = useI18n()
 const appStatus = useAppStatusStore()
 const preferencesStore = usePreferencesStore()
 const { info, indexer } = storeToRefs(appStatus)
@@ -13,7 +15,13 @@ const { preferences } = storeToRefs(preferencesStore)
 const themes: readonly PreferencesDto['theme'][] = ['dark', 'light', 'system']
 const languages: readonly PreferencesDto['language'][] = ['fr', 'en']
 
-const indexerTone = computed(() => (indexer.value === 'error' ? 'status__dot--accent' : ''))
+const indexerTone = computed(() => (indexer.value.state === 'error' ? 'status__dot--accent' : ''))
+const indexerLabel = computed(() => {
+  const { state, progress } = indexer.value
+  return state === 'importing' && progress !== undefined
+    ? t('status.indexer.importing', { done: progress.done, total: progress.total })
+    : t(`status.indexer.${state === 'importing' ? 'ready' : state}`)
+})
 
 function changeTheme(event: Event): void {
   const theme = themes.find((candidate) => candidate === (event.target as HTMLSelectElement).value)
@@ -30,7 +38,7 @@ function changeLanguage(event: Event): void {
   <footer class="status">
     <span class="status__item">
       <span class="status__dot" :class="indexerTone" />
-      {{ $t(`status.indexer.${indexer}`) }}
+      {{ indexerLabel }}
     </span>
 
     <span class="status__spacer" />

@@ -510,7 +510,7 @@ Les versions cibles sont **validées** (voir §5).
 
 | # | Fonctionnalité | Version | Statut | Plan détaillé |
 |---|---|---|---|---|
-| F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | à définir | `features/session_import.md` |
+| F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | à tester | [features/session_import.md](features/session_import.md) |
 | F02 | Navigateur d'historique par projet | V0 | à définir | `features/history_browser.md` |
 | F03 | Recherche plein texte | V0 | à définir | `features/full_text_search.md` |
 | F04 | Ouvrir dans VSCode (projet, fichier, review) | V0 | à définir | — (une ligne suffit) |
@@ -614,7 +614,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
 | 6 | Architecture globale | PLAN.md §2 | terminée |
-| 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | à tester |
+| 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | terminée |
 | 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la validation du plan de l'étape 0 (socle).

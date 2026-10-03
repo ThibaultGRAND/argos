@@ -1,26 +1,50 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import ProjectPicker from '../features/history/ProjectPicker.vue'
+import SessionListItem from '../features/history/SessionListItem.vue'
+import { useHistoryStore } from '../stores/history'
 import UiButton from '../ui/UiButton.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiMarker from '../ui/UiMarker.vue'
 
-/** Barre latérale 2a : projet, recherche, sessions filtrables. Contenu réel avec F01 et F02. */
+/** Barre latérale 2a : projet, recherche, sessions filtrables par statut et par titre. */
+const history = useHistoryStore()
+const { projects, selectedProject, sessions, selectedSessionId, error } = storeToRefs(history)
+
 const filters = ['all', 'running', 'waiting', 'done'] as const
-const activeFilter = ref<(typeof filters)[number]>('all')
+type Filter = (typeof filters)[number]
+const activeFilter = ref<Filter>('all')
+
+// Argos ne pilote pas encore de session (V1) : toutes les sessions importées sont terminées.
+const total = computed(() => selectedProject.value?.sessionCount ?? 0)
+const counts = computed<Record<Filter, number>>(() => ({ all: total.value, running: 0, waiting: 0, done: total.value }))
+const visibleSessions = computed(() =>
+  activeFilter.value === 'running' || activeFilter.value === 'waiting' ? [] : sessions.value,
+)
+
+const filterText = ref('')
+let debounce: ReturnType<typeof setTimeout> | undefined
+watch(filterText, (value) => {
+  if (debounce !== undefined) clearTimeout(debounce)
+  debounce = setTimeout(() => void history.setQuery(value), 200)
+})
+watch(selectedProject, () => {
+  filterText.value = ''
+  activeFilter.value = 'all'
+})
 </script>
 
 <template>
   <aside class="sidebar">
-    <div class="sidebar__project">
-      <span class="sidebar__project-name">{{ $t('nav.noProject') }}</span>
-    </div>
+    <ProjectPicker :projects="projects" :selected="selectedProject" @select="history.selectProject" />
 
     <div class="sidebar__block">
       <UiButton class="sidebar__search" shortcut="⌘K" disabled>{{ $t('nav.search') }}</UiButton>
     </div>
 
     <div class="sidebar__block sidebar__heading">
-      <UiMarker :label="`${$t('nav.sessions')} · 0`" />
+      <UiMarker :label="`${$t('nav.sessions')} · ${total}`" />
       <UiButton variant="ghost" shortcut="⌘N" disabled>+ {{ $t('nav.newSession') }}</UiButton>
     </div>
 
@@ -33,15 +57,45 @@ const activeFilter = ref<(typeof filters)[number]>('all')
         :class="{ 'sidebar__filter--active': filter === activeFilter }"
         @click="activeFilter = filter"
       >
-        {{ $t(`sessions.filters.${filter}`) }} <span class="mono">0</span>
+        {{ $t(`sessions.filters.${filter}`) }} <span class="mono">{{ counts[filter] }}</span>
       </button>
     </nav>
 
     <div class="sidebar__block">
-      <input class="sidebar__input" type="search" :placeholder="$t('sessions.filterPlaceholder')" disabled />
+      <input
+        v-model="filterText"
+        class="sidebar__input"
+        type="search"
+        :placeholder="$t('sessions.filterPlaceholder')"
+        :disabled="selectedProject === undefined"
+      />
     </div>
 
-    <UiEmptyState size="small" :title="$t('sessions.empty.title')" :body="$t('sessions.empty.body')" />
+    <p v-if="error" class="sidebar__error">{{ $t('sessions.loadError') }}</p>
+
+    <div class="sidebar__list">
+      <SessionListItem
+        v-for="session in visibleSessions"
+        :key="session.id"
+        :session="session"
+        :selected="session.id === selectedSessionId"
+        @select="history.selectSession(session.id)"
+      />
+
+      <UiEmptyState
+        v-if="projects.length === 0"
+        size="small"
+        :title="$t('projects.empty.title')"
+        :body="$t('projects.empty.body')"
+      />
+      <UiEmptyState
+        v-else-if="activeFilter === 'running' || activeFilter === 'waiting'"
+        size="small"
+        :title="$t('sessions.empty.title')"
+        :body="$t('sessions.notRunInArgos')"
+      />
+      <UiEmptyState v-else-if="visibleSessions.length === 0" size="small" :title="$t('sessions.noMatch')" />
+    </div>
   </aside>
 </template>
 
@@ -51,19 +105,8 @@ const activeFilter = ref<(typeof filters)[number]>('all')
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow-y: auto;
   background: var(--side);
   border-right: 1px solid var(--rule);
-}
-
-.sidebar__project {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--rule);
-}
-
-.sidebar__project-name {
-  font-weight: 600;
-  color: var(--tx2);
 }
 
 .sidebar__block {
@@ -116,5 +159,19 @@ const activeFilter = ref<(typeof filters)[number]>('all')
 
 .sidebar__input::placeholder {
   color: var(--tx3);
+}
+
+.sidebar__error {
+  margin: 12px 16px 0;
+  font-size: 13px;
+  color: var(--acc);
+}
+
+.sidebar__list {
+  flex: 1;
+  min-height: 0;
+  margin-top: 12px;
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
 }
 </style>
