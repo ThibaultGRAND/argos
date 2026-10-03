@@ -9,7 +9,11 @@ files:
   - package.json
   # Le binaire Claude fourni par l'Agent SDK (≈ 230 Mo) n'est pas embarqué : Argos utilise la CLI installée (F05).
   - '!node_modules/@anthropic-ai/claude-agent-sdk-*/**'
+# Icônes générées à partir de brand/argos-icone-app.svg (icon.png : pleine page ; icon-mac.png : grille Apple 824/1024).
+icon: build/icon.png
 extraResources:
+  - from: build/icon.png
+    to: icon.png
   - from: src/infrastructure/database/argos/migrations
     to: migrations/argos
   - from: src/infrastructure/database/index/migrations
@@ -17,6 +21,7 @@ extraResources:
 asar: true
 npmRebuild: true
 mac:
+  icon: build/icon-mac.png
   target:
     - dmg
   category: public.app-category.developer-tools

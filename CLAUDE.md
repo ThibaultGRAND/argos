@@ -19,7 +19,8 @@ Usage personnel et partage entre amis. **Jamais vendu par son auteur** ; le code
 - **Pourquoi** : l'app surveille en direct les agents et sous-agents, et garde la mémoire de tout ce qu'ils font.
 - **Univers** : il rejoint le panthéon personnel de Thibault (Hermès, son agent assistant messager ; L'Olympe, son wifi).
   Clin d'œil assumé : dans le mythe, Hermès endort et tue Argos (son surnom est Argeiphontès, « le tueur d'Argos »).
-- **Icône** : un hexagone isométrique avec un œil.
+- **Logo et icône** : symbole « Vesica » (œil en deux arcs, frise verticale, pupille-snapshot), fichiers dans `brand/`.
+  Règles d'usage dans le brandbook : jamais déformé, recoloré, arrondi, ni placé dans un cube ou un hexagone.
 - **Nom technique** : `argos` (dépôt, binaire, dossiers de configuration), sans accent.
 - **Risques connus** : Argos Translate et Argos CI existent, Argo (CD) est très proche, et le nom évoque le panoptique.
   Acceptés pour un projet personnel.

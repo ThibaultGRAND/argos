@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../brand/argos-logo-sur-sombre.svg">
+  <img alt="Argos" src="../brand/argos-logo-sur-clair.svg" width="240">
+</picture>
+
 # Argos
 
 [English](../README.md) · **Français**

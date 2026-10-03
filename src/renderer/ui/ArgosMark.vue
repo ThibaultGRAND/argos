@@ -1,17 +1,24 @@
 <script setup lang="ts">
-/** Icône d'Argos : un hexagone isométrique avec un œil (CLAUDE.md §1). */
+/**
+ * Symbole d'Argos « Vesica » (brand/argos-symbole.svg) : œil en deux arcs, frise verticale, pupille-snapshot.
+ * Couleur du texte courant (suit le thème). Grille 48, trait 3,2, angles en onglet ; jamais dans une forme (brandbook).
+ */
 </script>
 
 <template>
-  <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 2.5 20.5 7.25v9.5L12 21.5 3.5 16.75v-9.5Z" fill="none" stroke="currentColor" stroke-width="1.2" />
+  <svg class="mark" viewBox="0 0 48 48" role="img" aria-label="Argos">
     <path
-      d="M6.5 12c1.6-2.4 3.4-3.6 5.5-3.6s3.9 1.2 5.5 3.6c-1.6 2.4-3.4 3.6-5.5 3.6S8.1 14.4 6.5 12Z"
+      d="M3 24 A27 27 0 0 1 45 24 A27 27 0 0 1 3 24 Z"
       fill="none"
       stroke="currentColor"
-      stroke-width="1.2"
+      stroke-width="3.2"
+      stroke-linejoin="miter"
+      stroke-miterlimit="10"
     />
-    <circle cx="12" cy="12" r="1.6" fill="var(--acc)" />
+    <line x1="24" y1="1" x2="24" y2="11" stroke="currentColor" stroke-width="3.2" />
+    <line x1="24" y1="37" x2="24" y2="47" stroke="currentColor" stroke-width="3.2" />
+    <rect x="17" y="17" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" />
+    <rect x="21.5" y="21.5" width="5" height="5" fill="currentColor" />
   </svg>
 </template>
 

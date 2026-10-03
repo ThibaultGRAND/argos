@@ -46,8 +46,8 @@ defineProps<{ macos: boolean }>()
 }
 
 .titlebar__name {
-  font-weight: 600;
-  letter-spacing: 0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .titlebar__spacer {

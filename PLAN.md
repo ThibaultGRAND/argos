@@ -523,7 +523,7 @@ Les versions cibles sont **validées** (voir §5).
 | F11 | Profils de pré-prompts | V2 | à définir | `features/profiles.md` |
 | F12 | Blame par agent | V2 | à définir | `features/agent_blame.md` |
 | F13 | Vue d'activité des agents | V3 | à définir | `features/agent_activity.md` |
-| F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à définir | `features/notifications.md` |
+| F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à tester (V1) | [features/notifications.md](features/notifications.md) |
 | F15 | Multi-fournisseur complet via ACP (Codex, Gemini) | V3 | à définir | `features/providers.md` |
 | F16 | Paramètres et premier lancement (langue, thème, éditeur, sources, reconstruction de l'index) | V0 | terminé | [features/settings.md](features/settings.md) |
 | F17 | Disposition personnalisable (redimensionner, déplacer et masquer les panneaux) | V1 | à définir | [features/custom_layout.md](features/custom_layout.md) |
@@ -674,3 +674,4 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-03 | Pilotage de Claude avec l'**Agent SDK** (`@anthropic-ai/claude-agent-sdk` + `@anthropic-ai/sdk` + `@modelcontextprotocol/sdk`), exécuté avec la CLI `claude` installée | CLI en mode `-p` avec flux JSON | Permissions dans Argos (`canUseTool`), interruption, reprise et modèles fournis ; la CLI installée reste l'exécutable |
 | 2026-10-03 | F17 disposition personnalisable : panneaux déplaçables entre colonnes, redimensionnables et masquables | Ancrage libre façon VSCode ; simple inversion des côtés | Couvre l'essentiel de la personnalisation sans la complexité d'un système d'ancrage |
 | 2026-10-03 | Rangement de la racine du dépôt, sans déplacer PLAN.md ni features/ | Tout ranger dans docs/ | Garder la structure de CLAUDE.md §4.1 |
+| 2026-10-03 | Identité : symbole « Vesica » et brandbook (`brand/`) intégrés dans l'app, l'icône d'app (grille Apple pour macOS) et les README | Œil dans un hexagone provisoire | Identité définitive fournie par Thibault ; l'hexagone fait partie des usages interdits |
