@@ -1,0 +1,59 @@
+name: Bug report
+description: Something does not work as expected / Quelque chose ne marche pas comme prévu
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security problem? Do not open an issue: see [SECURITY.md](https://github.com/ThibaultGRAND/argos/blob/main/SECURITY.md).
+        You can write in English or French.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Argos version
+      description: Release version, or commit hash if built from source.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: e.g. macOS 26.1, Windows 11 24H2, Ubuntu 24.04
+  - type: input
+    id: agent
+    attributes:
+      label: Agent CLI and version
+      placeholder: e.g. Claude Code 2.3.1
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove any personal data, file paths or secrets before posting.
+      render: text

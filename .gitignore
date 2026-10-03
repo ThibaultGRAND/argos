@@ -5,3 +5,7 @@ dist/
 .DS_Store
 coverage/
 *.tsbuildinfo
+
+# Local uniquement, hors du dépôt public (PLAN.md §6)
+maquettes/
+prompts/

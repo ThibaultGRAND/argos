@@ -5,6 +5,15 @@
   "description": "Poste de pilotage local pour agents de code IA",
   "private": true,
   "license": "MIT",
+  "author": "Thibault Grand",
+  "homepage": "https://github.com/ThibaultGRAND/argos",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ThibaultGRAND/argos.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ThibaultGRAND/argos/issues"
+  },
   "main": "./out/main/index.js",
   "engines": {
     "node": ">=24"

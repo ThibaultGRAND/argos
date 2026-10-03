@@ -1,27 +1,40 @@
 # Argos
 
-Poste de pilotage local pour agents de code IA (Claude Code, puis Codex et Gemini CLI) :
-je retrouve tout, je relis tout, je peux tout annuler, et je sais toujours ce que font mes agents.
+**English** · [Français](README.fr.md)
 
-Projet personnel, gratuit, sans serveur. Plan et règles : [PLAN.md](PLAN.md), [CLAUDE.md](CLAUDE.md).
+A local cockpit for AI coding agents (Claude Code, then Codex and Gemini CLI):
+find everything, review everything, undo anything, and always know what your agents are doing.
 
-## Développement
+Personal project, free, no server. Plan and working rules (in French): [PLAN.md](PLAN.md), [CLAUDE.md](CLAUDE.md).
 
-Prérequis : Node 24 (voir `.nvmrc`).
+> **Status**: in development (pre-V0). No release yet.
+
+## Development
+
+Requirements: Node 24 (see `.nvmrc`).
 
 ```bash
 npm install
 npm run dev
 ```
 
-| Commande | Rôle |
+| Command | Purpose |
 |---|---|
-| `npm run dev` | Lance l'app en développement |
-| `npm run verify` | Types, lint, format, architecture et tests |
-| `npm run build:mac` / `build:win` / `build:linux` | Produit l'installateur de l'OS |
-| `npm run db:generate:argos` | Génère une migration de `argos.db` (à relire avant de l'appliquer) |
+| `npm run dev` | Run the app in development mode |
+| `npm run verify` | Types, lint, format, architecture and tests |
+| `npm run build:mac` / `build:win` / `build:linux` | Build the installer for that OS |
+| `npm run db:generate:argos` | Generate an `argos.db` migration (review it before applying) |
 
-## Installation sur macOS (app non signée)
+## Installing on macOS (unsigned app)
 
-Au premier lancement, macOS bloque l'app : faire clic droit sur Argos > Ouvrir, ou lancer
+On first launch, macOS blocks the app: right-click Argos > Open, or run
 `xattr -cr /Applications/Argos.app`.
+
+## Contributing
+
+Pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+To report a security vulnerability, see [SECURITY.md](SECURITY.md) (never in a public issue).
+
+## License
+
+[MIT](LICENSE) © 2026 Thibault Grand

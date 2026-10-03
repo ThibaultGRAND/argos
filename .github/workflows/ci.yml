@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# Jeton en lecture seule : une pull request venant d'un fork ne peut rien modifier dans le dépôt.
+permissions:
+  contents: read
+
 jobs:
   verify:
     name: Vérification (${{ matrix.os }})
