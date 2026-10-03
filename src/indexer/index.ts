@@ -18,6 +18,8 @@ const send = (message: IndexerToMainMessage): void => port.postMessage(message)
 
 let database: IndexDatabaseHandle | undefined
 let importer: ImportHistory | undefined
+let historyIndex: SqliteHistoryIndex | undefined
+let rebuildRequested = false
 let running = false
 let pending = false
 
@@ -30,6 +32,10 @@ async function runImport(): Promise<void> {
   }
   running = true
   try {
+    if (rebuildRequested) {
+      rebuildRequested = false
+      historyIndex?.clear()
+    }
     let lastSent = 0
     const report: ImportReport = await importer.execute((progress) => {
       // Limite les messages : un tous les 10 fichiers, et le dernier.
@@ -59,7 +65,8 @@ async function runImport(): Promise<void> {
 function start(indexDbPath: string, migrationsFolder: string): void {
   database = openIndexDatabase(indexDbPath, migrationsFolder)
   const claudeProjects = resolveClaudeProjectsDirectory()
-  importer = new ImportHistory([new ClaudeHistorySource(claudeProjects)], new SqliteHistoryIndex(database.database))
+  historyIndex = new SqliteHistoryIndex(database.database)
+  importer = new ImportHistory([new ClaudeHistorySource(claudeProjects)], historyIndex)
   send({ type: 'ready' })
 
   void runImport()
@@ -92,6 +99,11 @@ port.on('message', (event) => {
       }
       break
     case 'import':
+      void runImport()
+      break
+    case 'rebuild':
+      // Le vidage a lieu au début du prochain passage, jamais pendant un import en cours.
+      rebuildRequested = true
       void runImport()
       break
     case 'ping':

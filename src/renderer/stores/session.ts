@@ -70,6 +70,15 @@ export const useSessionStore = defineStore('session', () => {
     loading.value = false
   }
 
+  /** Charge les pages jusqu'à contenir l'entrée `seq` (ouverture depuis un résultat de recherche). */
+  async function loadUntil(seq: number): Promise<void> {
+    while (hasMore.value && (entries.value.at(-1)?.seq ?? -1) < seq) {
+      const before = entries.value.length
+      await loadMore()
+      if (entries.value.length === before) return
+    }
+  }
+
   /** L'index a changé : met à jour la fiche et, si tout est déjà chargé, ajoute les nouvelles entrées. */
   async function refresh(): Promise<void> {
     const id = sessionId.value
@@ -89,5 +98,5 @@ export const useSessionStore = defineStore('session', () => {
     argos.on('index.updated', () => void refresh())
   }
 
-  return { sessionId, detail, entries, blocks, hasMore, loading, error, open, close, loadMore, watchIndex }
+  return { sessionId, detail, entries, blocks, hasMore, loading, error, open, close, loadMore, loadUntil, watchIndex }
 })

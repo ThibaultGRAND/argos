@@ -12,7 +12,7 @@ historique consultable, recherche, review façon PR, plans, profils de pré-prom
 
 Ce n'est **pas un IDE** : l'édition se fait dans VSCode via des boutons « Ouvrir dans VSCode » (projet, fichier, review).
 
-Usage personnel et partage entre amis. **Jamais vendu.**
+Usage personnel et partage entre amis. **Jamais vendu par son auteur** ; le code est sous licence MIT (dépôt public `ThibaultGRAND/argos`).
 
 ### Le nom : Argos
 - **Mythe** : Argos Panoptès, le géant aux cent yeux chargé par Héra de surveiller Io. Il ne dormait jamais tout à fait.
@@ -78,7 +78,7 @@ ajouter une dépendance non listée, ou trancher une ambiguïté qui changerait 
 - Claude ne commite pas lui-même sans qu'on le lui demande.
 
 ### 3.6 La maquette globale est la référence visuelle
-- La **maquette globale validée** (direction C1, version 2a), déposée dans `maquettes/elements/`, est **la seule référence visuelle** de l'app.
+- La **maquette globale validée** (direction C1, version 2a), déposée dans `maquettes/elements/` (dossier local, hors du dépôt public), est **la seule référence visuelle** de l'app.
 - **On ne refait pas de maquette par fonctionnalité.** Un nouvel écran ou un nouvel élément s'inspire de la maquette globale :
   mêmes tokens (couleurs, typographie, espacements), mêmes composants, même ton.
 - Quand un plan de fonctionnalité introduit un écran absent de la maquette, Claude le **décrit dans la section
@@ -94,10 +94,11 @@ argos/
 ├── PLAN.md            ← plan global : vision, architecture, roadmap, décisions
 ├── features/
 │   └── <nom_feature>.md   ← un plan par fonctionnalité qui le justifie
-└── maquettes/
-    ├── prompts/       ← description de l'app + un prompt Claude Design par maquette
-    │   └── inspirations/  ← images de référence
-    └── elements/      ← maquettes finales validées (exports Claude Design)
+├── maquettes/         ← local uniquement, ignoré par git
+│   ├── prompts/       ← description de l'app + un prompt Claude Design par maquette
+│   │   └── inspirations/  ← images de référence
+│   └── elements/      ← maquettes finales validées (exports Claude Design)
+└── prompts/           ← prompts pour d'autres Claude hors code (GitHub, gouvernance…)
 ```
 
 ### 4.2 PLAN.md (plan global)

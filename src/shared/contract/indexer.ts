@@ -16,6 +16,7 @@ export type IndexerStatusDto = z.infer<typeof IndexerStatusSchema>
 export const MainToIndexerSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('init'), indexDbPath: z.string(), migrationsFolder: z.string() }),
   z.object({ type: z.literal('import') }),
+  z.object({ type: z.literal('rebuild') }),
   z.object({ type: z.literal('ping') }),
 ])
 export type MainToIndexerMessage = z.infer<typeof MainToIndexerSchema>

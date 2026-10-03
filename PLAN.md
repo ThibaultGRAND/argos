@@ -511,9 +511,9 @@ Les versions cibles sont **validées** (voir §5).
 | # | Fonctionnalité | Version | Statut | Plan détaillé |
 |---|---|---|---|---|
 | F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | terminé | [features/session_import.md](features/session_import.md) |
-| F02 | Navigateur d'historique : compte rendu d'une session | V0 | à tester | [features/session_detail.md](features/session_detail.md) |
-| F03 | Recherche plein texte | V0 | à définir | `features/full_text_search.md` |
-| F04 | Ouvrir dans VSCode (projet, fichier, review) | V0 | à définir | — (une ligne suffit) |
+| F02 | Navigateur d'historique : compte rendu d'une session | V0 | terminé | [features/session_detail.md](features/session_detail.md) |
+| F03 | Recherche plein texte | V0 | terminé | [features/full_text_search.md](features/full_text_search.md) |
+| F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | à tester | [features/open_in_editor.md](features/open_in_editor.md) |
 | F05 | Lancer et piloter une session d'agent | V1 | à définir | `features/agent_sessions.md` |
 | F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à définir | `features/agent_snapshots.md` |
 | F07 | Review façon PR | V1 | à définir | `features/pr_review.md` |
@@ -525,7 +525,7 @@ Les versions cibles sont **validées** (voir §5).
 | F13 | Vue d'activité des agents | V3 | à définir | `features/agent_activity.md` |
 | F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à définir | `features/notifications.md` |
 | F15 | Multi-fournisseur complet via ACP (Codex, Gemini) | V3 | à définir | `features/providers.md` |
-| F16 | Paramètres de l'app, dont la langue (choisie au premier lancement, modifiable ensuite) | V0 | à définir | — (une ligne suffit) |
+| F16 | Paramètres et premier lancement (langue, thème, éditeur, sources, reconstruction de l'index) | V0 | à tester | [features/settings.md](features/settings.md) |
 
 ## 5. Roadmap
 
@@ -589,6 +589,8 @@ Les versions cibles sont **validées** (voir §5).
 Réalisées dans Claude Design. Règle : [CLAUDE.md](CLAUDE.md) §3.6.
 Statuts : `à faire` · `en cours` · `validée`
 
+Le dossier `maquettes/` est **local, hors du dépôt public** (ignoré par git) : les liens ci-dessous ne fonctionnent que sur la machine de Thibault.
+
 Organisation du dossier `maquettes/` :
 - `prompts/00_description_app.md` : contexte de l'app, joint à chaque prompt
 - `prompts/NN_<nom>.md` : un prompt Claude Design par maquette
@@ -615,9 +617,14 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
 | 6 | Architecture globale | PLAN.md §2 | terminée |
 | 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | terminée |
+| 7b | **Dépôt GitHub** : dépôt public `ThibaultGRAND/argos`, licence MIT, ruleset sur `main`, fichiers d'accueil des contributeurs, sécurité gratuite | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/` | en cours |
 | 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la validation du plan de l'étape 0 (socle).
+
+**Notés pour plus tard (dépôt GitHub)**
+- Rendre la CI (`Vérification` sur les 3 OS) **obligatoire** dans le ruleset de `main` : à décider par Thibault.
+- Versions et publications (SemVer, tags, `CHANGELOG.md`, GitHub Releases, avertissement « app non signée ») : à la V1, avec F09.
 
 ## 8. Journal des décisions
 
@@ -651,3 +658,7 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-02 | Après le socle, cycle court par fonctionnalité : fiche courte, code, test utilisateur, corrections | Plan détaillé validé avant chaque fonctionnalité | Architecture et liste des fonctionnalités validées ; avancer vite avec un retour utilisateur réel |
 | 2026-10-03 | Rendu Markdown des réponses de l'agent avec **markdown-it** (HTML brut et images désactivés, liens ouverts hors de l'app) | Texte brut ; marked + DOMPurify | Lisibilité comparable à Claude ; sûr sans bibliothèque de nettoyage supplémentaire |
 | 2026-10-03 | Coloration syntaxique avec **highlight.js** (langages courants, thème C1 par classes CSS) | Shiki | Synchrone avec markdown-it, léger, thème fidèle aux tokens C1 en sombre et clair |
+| 2026-10-03 | Projet publié sur le compte personnel **`ThibaultGRAND/argos`**, dépôt **public** ; historique réécrit (auteur `Thibault Grand`, e-mail personnel) ; `maquettes/` et `prompts/` hors du dépôt | Compte professionnel ; dépôt privé ; organisation GitHub | Projet personnel ; les rulesets et l'analyse de sécurité sont gratuits sur un dépôt public |
+| 2026-10-03 | Licence **MIT** | PolyForm Perimeter (interdit la revente mais n'est pas open source), GPL v3 (autorise la revente si le code source est fourni) | Vraiment open source, simple ; chacun fait ce qu'il veut, y compris vendre |
+| 2026-10-03 | `main` protégée par un **ruleset** : PR obligatoire, 1 approbation, ni push forcé ni suppression, contournement réservé à l'admin (Thibault) ; seul Thibault fusionne | Protection de branche classique ; amis avec droit d'écriture | Rulesets plus souples et visibles de tous ; Thibault reste seul à décider de ce qui entre dans `main` |
+| 2026-10-03 | Fichiers du projet en **anglais**, avec une version française de `README` et `CONTRIBUTING` ; aucune politique spécifique sur le code écrit par IA | Tout en français ; tout bilingue | Ouvert aux contributeurs non francophones sans doubler toute la maintenance |

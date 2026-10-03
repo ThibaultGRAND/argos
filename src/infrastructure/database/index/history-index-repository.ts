@@ -40,6 +40,14 @@ export class SqliteHistoryIndex implements HistoryIndex {
     })
   }
 
+  clear(): void {
+    this.database.transaction((tx) => {
+      // Les suppressions en cascade et les triggers FTS5 vident aussi messages, appels d'outils et recherche.
+      tx.delete(projects).run()
+      tx.delete(importCursors).run()
+    })
+  }
+
   applyChunk(file: SourceFile, events: readonly HistoryEvent[], cursor: ImportCursor): ApplyResult {
     return this.database.transaction((tx) => new ChunkProjection(tx, file).apply(events, cursor))
   }

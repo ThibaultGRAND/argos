@@ -14,6 +14,8 @@ export interface HistoryIndex {
   cursors(providerId: ProviderId): ReadonlyMap<string, ImportCursor>
   /** Supprime la session et la position d'un fichier, avant une réimportation complète. */
   resetSource(file: SourceFile): void
+  /** Vide tout l'index (sessions, messages, positions de lecture) avant une reconstruction complète. */
+  clear(): void
   /** Applique les événements d'un bloc et enregistre la nouvelle position, dans une même transaction. */
   applyChunk(file: SourceFile, events: readonly HistoryEvent[], cursor: ImportCursor): ApplyResult
 }

@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { utilityProcess, type UtilityProcess } from 'electron'
 import type { IndexerStatus } from '../core/domain/indexer/indexer-status'
+import type { IndexerControl } from '../core/domain/ports/indexer-control'
 import type { IndexerMonitor } from '../core/domain/ports/indexer-monitor'
 import { IndexerToMainSchema, type MainToIndexerMessage } from '../shared/contract'
 
@@ -19,7 +20,7 @@ export interface IndexerCallbacks {
  * Lance l'indexeur dans un utilityProcess, le relance avec un délai croissant s'il s'arrête,
  * et expose son état (PLAN.md §2.3, flux A).
  */
-export class IndexerSupervisor implements IndexerMonitor {
+export class IndexerSupervisor implements IndexerMonitor, IndexerControl {
   private child: UtilityProcess | undefined
   private status: IndexerStatus = { state: 'starting' }
   private restartDelayMs = 1_000
@@ -89,6 +90,10 @@ export class IndexerSupervisor implements IndexerMonitor {
   /** Demande un passage d'import incrémental (par exemple quand l'app revient au premier plan). */
   requestImport(): void {
     this.send({ type: 'import' })
+  }
+
+  requestRebuild(): void {
+    this.send({ type: 'rebuild' })
   }
 
   stop(): void {

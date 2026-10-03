@@ -12,6 +12,10 @@ export const requestNames = [
   'sessions.get',
   'sessions.entries',
   'links.open',
+  'search.query',
+  'editor.open',
+  'settings.environment',
+  'index.rebuild',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 

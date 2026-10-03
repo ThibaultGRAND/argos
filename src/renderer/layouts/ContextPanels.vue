@@ -2,6 +2,9 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { openInEditor } from '../services/editor'
+import { useNoticesStore } from '../stores/notices'
+import { usePreferencesStore } from '../stores/preferences'
 import { useSessionStore } from '../stores/session'
 import UiMarker from '../ui/UiMarker.vue'
 import { formatDateTime, formatDuration, formatModel, relativeToProject } from '../utils/format'
@@ -9,6 +12,15 @@ import { formatDateTime, formatDuration, formatModel, relativeToProject } from '
 /** Colonne de droite 2a : D. Fichiers, E. Snapshots (V1), F. Fiche de la session ouverte. */
 const { detail } = storeToRefs(useSessionStore())
 const { t, locale } = useI18n()
+const notices = useNoticesStore()
+const { preferences } = storeToRefs(usePreferencesStore())
+
+function openFile(path: string): void {
+  void notices.attempt(() => openInEditor(path))
+}
+
+const fileTitle = (path: string): string =>
+  t('editor.openFile', { file: path, editor: t(`editors.${preferences.value.editor}`) })
 
 const sheet = computed(() => {
   const session = detail.value
@@ -33,9 +45,16 @@ const sheet = computed(() => {
       <UiMarker :label="t('panel.files')" />
       <template v-if="detail">
         <ul v-if="detail.files.length > 0" class="panels__files">
-          <li v-for="file in detail.files" :key="file.path" class="panels__file" :title="file.path">
-            <span class="panels__path">{{ relativeToProject(file.path, detail.projectPath) }}</span>
-            <span class="panels__delta">+{{ file.linesAdded }} −{{ file.linesRemoved }}</span>
+          <li v-for="file in detail.files" :key="file.path">
+            <button
+              type="button"
+              class="panels__file panels__file--link"
+              :title="fileTitle(file.path)"
+              @click="openFile(file.path)"
+            >
+              <span class="panels__path">{{ relativeToProject(file.path, detail.projectPath) }}</span>
+              <span class="panels__delta">+{{ file.linesAdded }} −{{ file.linesRemoved }}</span>
+            </button>
           </li>
           <li class="panels__file panels__file--total">
             <span>{{ t('panel.total') }}</span>
@@ -97,6 +116,20 @@ const sheet = computed(() => {
   padding: 4px 0;
   font-family: var(--font-mono);
   font-size: 12px;
+}
+
+.panels__file--link {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.panels__file--link:hover .panels__path {
+  color: var(--acc);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .panels__file--total {

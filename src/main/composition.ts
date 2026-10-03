@@ -3,14 +3,22 @@ import { GetSessionDetail } from '../core/application/history/get-session-detail
 import { ListSessionEntries } from '../core/application/history/list-session-entries'
 import { ListSessions } from '../core/application/history/list-sessions'
 import { OpenExternalLink } from '../core/application/links/open-external-link'
+import { SearchHistory } from '../core/application/search/search-history'
 import { GetIndexerStatus } from '../core/application/indexer/get-indexer-status'
 import { GetPreferences } from '../core/application/preferences/get-preferences'
 import { UpdatePreferences } from '../core/application/preferences/update-preferences'
 import { ListProjects } from '../core/application/projects/list-projects'
+import { OpenInEditor } from '../core/application/editor/open-in-editor'
+import { GetEnvironment } from '../core/application/settings/get-environment'
+import { RebuildIndex } from '../core/application/settings/rebuild-index'
+import type { IndexerControl } from '../core/domain/ports/indexer-control'
 import type { IndexerMonitor } from '../core/domain/ports/indexer-monitor'
 import { openArgosDatabase } from '../infrastructure/database/argos/argos-database'
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
+import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
+import { resolveClaudeProjectsDirectory } from '../infrastructure/system/claude-paths'
+import { ElectronEditorLauncher } from './adapters/electron-editor-launcher'
 import { ElectronAppMetadata } from './adapters/electron-app-metadata'
 import { ElectronLinkOpener } from './adapters/electron-link-opener'
 import type { RequestHandlers } from './ipc/register'
@@ -22,7 +30,7 @@ export interface Composition {
 }
 
 /** Racine de composition : branche les adaptateurs sur les cas d'usage (injection manuelle). */
-export function compose(paths: AppPaths, indexer: IndexerMonitor): Composition {
+export function compose(paths: AppPaths, indexer: IndexerMonitor & IndexerControl): Composition {
   const argosDb = openArgosDatabase({
     path: paths.argosDb,
     migrationsFolder: paths.argosMigrations,
@@ -40,6 +48,25 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor): Composition {
   const getSessionDetail = new GetSessionDetail(sessionQueries)
   const listSessionEntries = new ListSessionEntries(sessionQueries)
   const openExternalLink = new OpenExternalLink(new ElectronLinkOpener())
+  const searchHistory = new SearchHistory(sessionQueries)
+  const pathInspector = new NodePathInspector()
+  const openInEditor = new OpenInEditor(
+    preferencesRepository,
+    sessionQueries,
+    pathInspector,
+    new ElectronEditorLauncher(),
+  )
+  const getEnvironment = new GetEnvironment(
+    paths.userData,
+    [
+      { providerId: 'claude', directory: resolveClaudeProjectsDirectory() },
+      { providerId: 'codex', directory: null },
+      { providerId: 'gemini', directory: null },
+    ],
+    sessionQueries,
+    pathInspector,
+  )
+  const rebuildIndex = new RebuildIndex(indexer)
 
   const handlers: RequestHandlers = {
     'app.info': () => getAppInfo.execute(),
@@ -55,6 +82,26 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor): Composition {
     'sessions.entries': ({ sessionId, afterSeq, limit }) => {
       const page = listSessionEntries.execute(sessionId, afterSeq, limit)
       return { ...page, entries: [...page.entries] }
+    },
+    'search.query': ({ query, projectId, period }) => {
+      const results = searchHistory.execute({
+        query,
+        ...(projectId === undefined ? {} : { projectId }),
+        ...(period === undefined ? {} : { period }),
+      })
+      return { sessions: [...results.sessions], messages: [...results.messages] }
+    },
+    'editor.open': async ({ path, line }) => {
+      await openInEditor.execute(path, line)
+      return undefined
+    },
+    'settings.environment': () => {
+      const environment = getEnvironment.execute()
+      return { ...environment, sources: [...environment.sources] }
+    },
+    'index.rebuild': () => {
+      rebuildIndex.execute()
+      return undefined
     },
     'links.open': async ({ url }) => {
       await openExternalLink.execute(url)

@@ -1,6 +1,6 @@
 # F02 — Compte rendu d'une session
 
-**Statut** : à tester
+**Statut** : terminé
 **Version cible** : V0
 **Dépend de** : [session_import.md](session_import.md)
 **Écrans** : document central de la maquette 2a (en-tête façon fiche, entrées numérotées, appels d'outils repliés),

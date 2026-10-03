@@ -28,17 +28,32 @@ describe('argos.db', () => {
   it('renvoie les préférences par défaut sur une base neuve', async () => {
     const handle = open()
     const repository = new SqlitePreferencesRepository(handle.database)
-    expect(await repository.load()).toEqual({ theme: 'dark', language: 'fr' })
+    expect(await repository.load()).toEqual({
+      theme: 'dark',
+      language: 'fr',
+      editor: 'vscode',
+      firstRunCompleted: false,
+    })
     handle.close()
   })
 
   it('conserve les préférences enregistrées après réouverture', async () => {
     const first = open()
-    await new SqlitePreferencesRepository(first.database).save({ theme: 'light', language: 'en' })
+    await new SqlitePreferencesRepository(first.database).save({
+      theme: 'light',
+      language: 'en',
+      editor: 'cursor',
+      firstRunCompleted: true,
+    })
     first.close()
 
     const second = open()
-    expect(await new SqlitePreferencesRepository(second.database).load()).toEqual({ theme: 'light', language: 'en' })
+    expect(await new SqlitePreferencesRepository(second.database).load()).toEqual({
+      theme: 'light',
+      language: 'en',
+      editor: 'cursor',
+      firstRunCompleted: true,
+    })
     second.close()
   })
 

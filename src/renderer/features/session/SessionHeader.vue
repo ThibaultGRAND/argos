@@ -2,12 +2,25 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SessionDetailDto } from '@shared/contract'
+import { storeToRefs } from 'pinia'
+import { openInEditor } from '../../services/editor'
+import { useNoticesStore } from '../../stores/notices'
+import { usePreferencesStore } from '../../stores/preferences'
+import UiButton from '../../ui/UiButton.vue'
 import UiMarker from '../../ui/UiMarker.vue'
 import { formatDuration, formatModel } from '../../utils/format'
 
 /** En-tête façon fiche : repère, titre en grand, métadonnées en monospace. */
 const props = defineProps<{ detail: SessionDetailDto }>()
 const { t } = useI18n()
+const notices = useNoticesStore()
+const { preferences } = storeToRefs(usePreferencesStore())
+
+const openLabel = computed(() => t('editor.openIn', { editor: t(`editors.${preferences.value.editor}`) }))
+
+function openProject(): void {
+  void notices.attempt(() => openInEditor(props.detail.projectPath))
+}
 
 const marker = computed(() =>
   t('document.sessionMarker', { id: props.detail.externalId.slice(0, 8), project: props.detail.projectName }),
@@ -26,7 +39,10 @@ const meta = computed(() =>
 
 <template>
   <header class="header">
-    <UiMarker :label="marker" />
+    <div class="header__top">
+      <UiMarker :label="marker" />
+      <UiButton @click="openProject">{{ openLabel }}</UiButton>
+    </div>
     <h1 class="header__title" :class="{ 'header__title--untitled': detail.title === null }">
       {{ detail.title ?? t('sessions.untitled') }}
     </h1>
@@ -44,6 +60,13 @@ const meta = computed(() =>
 .header {
   padding: 28px 0 20px;
   border-bottom: 1px solid var(--rule);
+}
+
+.header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .header__title {

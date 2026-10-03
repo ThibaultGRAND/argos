@@ -112,7 +112,9 @@
     "unknown": "Une erreur inattendue est survenue.",
     "invalid_input": "La demande envoyée est invalide.",
     "unknown_request": "Cette action n'existe pas.",
-    "unsafe_link": "Ce lien ne peut pas être ouvert."
+    "unsafe_link": "Ce lien ne peut pas être ouvert.",
+    "unknown_path": "Argos n'ouvre que les fichiers de tes projets.",
+    "file_not_found": "Ce fichier n'existe plus."
   },
   "providers": {
     "claude": "Claude Code",
@@ -124,5 +126,69 @@
       "title": "Aucun projet",
       "body": "Aucune session Claude Code trouvée sur cette machine pour l'instant."
     }
+  },
+  "search": {
+    "placeholder": "Rechercher dans toutes les conversations",
+    "scope": {
+      "all": "Tous les projets",
+      "project": "Projet actuel"
+    },
+    "periods": {
+      "all": "Tout",
+      "week": "7 jours",
+      "month": "30 jours",
+      "year": "1 an"
+    },
+    "groups": {
+      "sessions": "Sessions",
+      "messages": "Messages"
+    },
+    "noResult": "Aucun résultat pour « {query} »",
+    "hint": "Tapez au moins 2 caractères",
+    "keys": "↑ ↓ naviguer · Entrée ouvrir · Échap fermer",
+    "close": "Fermer la recherche",
+    "error": "La recherche a échoué."
+  },
+  "editors": {
+    "vscode": "VSCode",
+    "vscode-insiders": "VSCode Insiders",
+    "cursor": "Cursor",
+    "vscodium": "VSCodium"
+  },
+  "editor": {
+    "openIn": "Ouvrir dans {editor}",
+    "openFile": "Ouvrir {file} dans {editor}"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "back": "Retour",
+    "open": "Paramètres",
+    "sections": {
+      "appearance": "A. Apparence",
+      "editor": "B. Éditeur",
+      "sources": "C. Sources",
+      "data": "D. Données",
+      "about": "E. À propos"
+    },
+    "theme": "Thème",
+    "language": "Langue",
+    "editorLabel": "Éditeur utilisé par « Ouvrir dans… »",
+    "sourceStatus": {
+      "available": "{count} session | {count} sessions",
+      "missing": "Dossier introuvable sur cette machine",
+      "planned": "Avec la V3"
+    },
+    "dataDirectory": "Emplacement des données d'Argos",
+    "rebuild": "Reconstruire l'index",
+    "rebuildHelp": "Réimporte toutes les sessions depuis les fichiers des CLI. Tes réglages et les données propres à Argos ne sont pas touchés.",
+    "rebuildStarted": "Reconstruction de l'index lancée.",
+    "version": "Version",
+    "license": "Licence",
+    "licenseValue": "À définir (configuration GitHub en cours)"
+  },
+  "firstRun": {
+    "title": "Choisissez votre langue",
+    "subtitle": "Choose your language",
+    "hint": "Modifiable ensuite dans les paramètres."
   }
 }

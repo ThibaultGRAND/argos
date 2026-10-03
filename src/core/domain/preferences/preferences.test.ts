@@ -3,17 +3,28 @@ import { defaultPreferences, restorePreferences, updatePreferences } from './pre
 
 describe('restorePreferences', () => {
   it('reprend des préférences valides', () => {
-    expect(restorePreferences({ theme: 'light', language: 'en' })).toEqual({ theme: 'light', language: 'en' })
+    expect(restorePreferences({ theme: 'light', language: 'en', editor: 'cursor', firstRunCompleted: true })).toEqual({
+      theme: 'light',
+      language: 'en',
+      editor: 'cursor',
+      firstRunCompleted: true,
+    })
   })
 
   it('remplace les valeurs absentes ou invalides par les valeurs par défaut', () => {
     expect(restorePreferences({})).toEqual(defaultPreferences)
-    expect(restorePreferences({ theme: 'violet', language: 42 })).toEqual(defaultPreferences)
+    expect(restorePreferences({ theme: 'violet', language: 42, editor: 'vim', firstRunCompleted: 'oui' })).toEqual(
+      defaultPreferences,
+    )
   })
 })
 
 describe('updatePreferences', () => {
   it('ne modifie que les champs fournis', () => {
-    expect(updatePreferences(defaultPreferences, { language: 'en' })).toEqual({ theme: 'dark', language: 'en' })
+    expect(updatePreferences(defaultPreferences, { language: 'en', firstRunCompleted: true })).toEqual({
+      ...defaultPreferences,
+      language: 'en',
+      firstRunCompleted: true,
+    })
   })
 })

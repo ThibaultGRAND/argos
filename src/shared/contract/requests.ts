@@ -12,6 +12,8 @@ import {
 } from './history'
 import { IndexerStatusSchema } from './indexer'
 import { PreferencesSchema, PreferencesUpdateSchema } from './preferences'
+import { SearchInputSchema, SearchResultsSchema } from './search'
+import { EnvironmentSchema, OpenInEditorInputSchema } from './settings'
 
 interface RequestDefinition {
   readonly input: z.ZodType
@@ -31,6 +33,10 @@ export const requests = {
   'sessions.list': { input: ListSessionsInputSchema, output: z.array(SessionSummarySchema) },
   'sessions.get': { input: SessionIdInputSchema, output: SessionDetailSchema },
   'sessions.entries': { input: ListEntriesInputSchema, output: TimelinePageSchema },
+  'editor.open': { input: OpenInEditorInputSchema, output: z.undefined() },
+  'settings.environment': { input: z.undefined(), output: EnvironmentSchema },
+  'index.rebuild': { input: z.undefined(), output: z.undefined() },
+  'search.query': { input: SearchInputSchema, output: SearchResultsSchema },
   'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>
 

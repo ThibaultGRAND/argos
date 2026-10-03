@@ -71,4 +71,7 @@ export interface SessionQueries {
   listSessionFiles(sessionId: number): readonly SessionFileRow[]
   /** Messages et appels d'outils de `seq` strictement supérieur à `afterSeq`, dans l'ordre, au plus `limit`. */
   listEntries(sessionId: number, afterSeq: number, limit: number): readonly (MessageRow | ToolCallRow)[]
+  /** Vrai si le chemin est dans un projet connu, ou est un fichier modifié présent dans l'index. */
+  isKnownPath(path: string): boolean
+  countSessions(providerId: ProviderId): number
 }

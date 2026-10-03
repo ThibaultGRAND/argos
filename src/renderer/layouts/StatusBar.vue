@@ -2,18 +2,13 @@
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
-import type { PreferencesDto } from '@shared/contract'
 import { useAppStatusStore } from '../stores/app-status'
-import { usePreferencesStore } from '../stores/preferences'
+import { useNoticesStore } from '../stores/notices'
 
-const { t } = useI18n()
-const appStatus = useAppStatusStore()
-const preferencesStore = usePreferencesStore()
-const { info, indexer } = storeToRefs(appStatus)
-const { preferences } = storeToRefs(preferencesStore)
-
-const themes: readonly PreferencesDto['theme'][] = ['dark', 'light', 'system']
-const languages: readonly PreferencesDto['language'][] = ['fr', 'en']
+/** Barre d'état : indexeur, message bref de la dernière action, version. */
+const { t, te } = useI18n()
+const { info, indexer } = storeToRefs(useAppStatusStore())
+const { current: notice } = storeToRefs(useNoticesStore())
 
 const indexerTone = computed(() => (indexer.value.state === 'error' ? 'status__dot--accent' : ''))
 const indexerLabel = computed(() => {
@@ -22,16 +17,11 @@ const indexerLabel = computed(() => {
     ? t('status.indexer.importing', { done: progress.done, total: progress.total })
     : t(`status.indexer.${state === 'importing' ? 'ready' : state}`)
 })
-
-function changeTheme(event: Event): void {
-  const theme = themes.find((candidate) => candidate === (event.target as HTMLSelectElement).value)
-  if (theme !== undefined) void preferencesStore.update({ theme })
-}
-
-function changeLanguage(event: Event): void {
-  const language = languages.find((candidate) => candidate === (event.target as HTMLSelectElement).value)
-  if (language !== undefined) void preferencesStore.update({ language })
-}
+const noticeText = computed(() => {
+  const key = notice.value?.messageKey
+  if (key === undefined) return undefined
+  return te(key) ? t(key) : t('errors.unknown')
+})
 </script>
 
 <template>
@@ -40,26 +30,11 @@ function changeLanguage(event: Event): void {
       <span class="status__dot" :class="indexerTone" />
       {{ indexerLabel }}
     </span>
-
+    <span v-if="noticeText" class="status__notice" :class="{ 'status__notice--error': notice?.tone === 'error' }">
+      {{ noticeText }}
+    </span>
     <span class="status__spacer" />
-
-    <label class="status__item">
-      {{ $t('status.theme.label') }}
-      <select class="status__select" :value="preferences.theme" @change="changeTheme">
-        <option v-for="theme in themes" :key="theme" :value="theme">{{ $t(`status.theme.${theme}`) }}</option>
-      </select>
-    </label>
-
-    <label class="status__item">
-      {{ $t('status.language.label') }}
-      <select class="status__select" :value="preferences.language" @change="changeLanguage">
-        <option v-for="language in languages" :key="language" :value="language">
-          {{ $t(`status.language.${language}`) }}
-        </option>
-      </select>
-    </label>
-
-    <span v-if="info" class="status__item">{{ $t('status.version', { version: info.version }) }}</span>
+    <span v-if="info" class="status__item">{{ t('status.version', { version: info.version }) }}</span>
   </footer>
 </template>
 
@@ -98,12 +73,11 @@ function changeLanguage(event: Event): void {
   background: var(--acc);
 }
 
-.status__select {
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--input);
-  font-family: var(--font-mono);
-  font-size: 11px;
+.status__notice {
   color: var(--tx2);
+}
+
+.status__notice--error {
+  color: var(--acc);
 }
 </style>

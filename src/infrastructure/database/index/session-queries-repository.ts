@@ -128,6 +128,25 @@ export class SqliteSessionQueries implements SessionQueries {
       .all()
   }
 
+  isKnownPath(path: string): boolean {
+    // Un projet à la racine du disque (« / », « C:\ ») ne rend pas tout le disque accessible.
+    const row = this.database.get<{ known: number }>(sql`
+      select exists(
+        select 1 from projects
+        where length(path) > 3
+          and (${path} = path or substr(${path}, 1, length(path) + 1) in (path || '/', path || '\'))
+      ) or exists(select 1 from file_changes where path = ${path}) as known
+    `)
+    return row?.known === 1
+  }
+
+  countSessions(providerId: ProviderId): number {
+    return (
+      this.database.select({ count: count() }).from(sessions).where(eq(sessions.providerId, providerId)).get()?.count ??
+      0
+    )
+  }
+
   listEntries(sessionId: number, afterSeq: number, limit: number): readonly (MessageRow | ToolCallRow)[] {
     const messageRows: MessageRow[] = this.database
       .select({ seq: messages.seq, role: messages.role, text: messages.text, occurredAt: messages.occurredAt })

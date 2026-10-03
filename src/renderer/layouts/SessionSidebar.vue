@@ -5,6 +5,8 @@ import { useRouter } from 'vue-router'
 import ProjectPicker from '../features/history/ProjectPicker.vue'
 import SessionListItem from '../features/history/SessionListItem.vue'
 import { useHistoryStore } from '../stores/history'
+import { useAppStatusStore } from '../stores/app-status'
+import { useSearchStore } from '../stores/search'
 import UiButton from '../ui/UiButton.vue'
 import UiEmptyState from '../ui/UiEmptyState.vue'
 import UiMarker from '../ui/UiMarker.vue'
@@ -12,9 +14,14 @@ import UiMarker from '../ui/UiMarker.vue'
 /** Barre latérale 2a : projet, recherche, sessions filtrables par statut et par titre. */
 const history = useHistoryStore()
 const router = useRouter()
+const search = useSearchStore()
 const { projects, selectedProject, sessions, selectedSessionId, error } = storeToRefs(history)
 
 const filters = ['all', 'running', 'waiting', 'done'] as const
+
+// Raccourci affiché selon l'OS : ⌘K sur macOS, Ctrl+K ailleurs (même règle que le raccourci global, App.vue).
+const appStatus = useAppStatusStore()
+const shortcut = computed(() => (appStatus.info?.platform === 'darwin' ? '⌘K' : 'Ctrl+K'))
 type Filter = (typeof filters)[number]
 const activeFilter = ref<Filter>('all')
 
@@ -49,7 +56,7 @@ async function chooseProject(projectId: number): Promise<void> {
     <ProjectPicker :projects="projects" :selected="selectedProject" @select="chooseProject" />
 
     <div class="sidebar__block">
-      <UiButton class="sidebar__search" shortcut="⌘K" disabled>{{ $t('nav.search') }}</UiButton>
+      <UiButton class="sidebar__search" :shortcut="shortcut" @click="search.open()">{{ $t('nav.search') }}</UiButton>
     </div>
 
     <div class="sidebar__block sidebar__heading">

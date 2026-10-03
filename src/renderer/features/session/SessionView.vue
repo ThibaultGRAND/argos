@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useHistoryStore } from '../../stores/history'
 import { useSessionStore } from '../../stores/session'
@@ -9,7 +9,7 @@ import TimelineMessage from './TimelineMessage.vue'
 import TimelineToolGroup from './TimelineToolGroup.vue'
 
 /** Compte rendu d'une session (F02) : en-tête, entrées numérotées, chargement de la suite en descendant. */
-const props = defineProps<{ id: number }>()
+const props = defineProps<{ id: number; seq?: number | undefined }>()
 
 const session = useSessionStore()
 const history = useHistoryStore()
@@ -19,13 +19,26 @@ const sentinel = ref<HTMLElement | null>(null)
 let observer: IntersectionObserver | undefined
 
 watch(
-  () => props.id,
-  (id) => {
+  () => [props.id, props.seq] as const,
+  async ([id, seq], previous) => {
     history.selectSession(id)
-    void session.open(id)
+    if (previous === undefined || previous[0] !== id) await session.open(id)
+    if (seq !== undefined) await revealEntry(seq)
   },
   { immediate: true },
 )
+
+/** Fait défiler jusqu'au message `seq` et le met en évidence un instant. */
+async function revealEntry(seq: number): Promise<void> {
+  await session.loadUntil(seq)
+  await nextTick()
+  const element = document.querySelector<HTMLElement>(`[data-seq="${seq}"]`)
+  if (element === null) return
+  element.scrollIntoView({ block: 'center' })
+  element.classList.remove('message--target')
+  void element.offsetWidth
+  element.classList.add('message--target')
+}
 
 watch(detail, (loaded) => {
   if (loaded !== undefined) void history.revealProject(loaded.projectId)

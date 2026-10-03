@@ -112,7 +112,9 @@
     "unknown": "An unexpected error occurred.",
     "invalid_input": "The request is invalid.",
     "unknown_request": "This action does not exist.",
-    "unsafe_link": "This link cannot be opened."
+    "unsafe_link": "This link cannot be opened.",
+    "unknown_path": "Argos only opens files from your projects.",
+    "file_not_found": "This file no longer exists."
   },
   "providers": {
     "claude": "Claude Code",
@@ -124,5 +126,69 @@
       "title": "No projects",
       "body": "No Claude Code session found on this machine yet."
     }
+  },
+  "search": {
+    "placeholder": "Search all conversations",
+    "scope": {
+      "all": "All projects",
+      "project": "Current project"
+    },
+    "periods": {
+      "all": "All time",
+      "week": "7 days",
+      "month": "30 days",
+      "year": "1 year"
+    },
+    "groups": {
+      "sessions": "Sessions",
+      "messages": "Messages"
+    },
+    "noResult": "No result for “{query}”",
+    "hint": "Type at least 2 characters",
+    "keys": "↑ ↓ navigate · Enter open · Esc close",
+    "close": "Close search",
+    "error": "Search failed."
+  },
+  "editors": {
+    "vscode": "VSCode",
+    "vscode-insiders": "VSCode Insiders",
+    "cursor": "Cursor",
+    "vscodium": "VSCodium"
+  },
+  "editor": {
+    "openIn": "Open in {editor}",
+    "openFile": "Open {file} in {editor}"
+  },
+  "settings": {
+    "title": "Settings",
+    "back": "Back",
+    "open": "Settings",
+    "sections": {
+      "appearance": "A. Appearance",
+      "editor": "B. Editor",
+      "sources": "C. Sources",
+      "data": "D. Data",
+      "about": "E. About"
+    },
+    "theme": "Theme",
+    "language": "Language",
+    "editorLabel": "Editor used by “Open in…”",
+    "sourceStatus": {
+      "available": "{count} session | {count} sessions",
+      "missing": "Folder not found on this machine",
+      "planned": "Coming with V3"
+    },
+    "dataDirectory": "Argos data location",
+    "rebuild": "Rebuild index",
+    "rebuildHelp": "Re-imports every session from the CLI files. Your settings and Argos's own data are not touched.",
+    "rebuildStarted": "Index rebuild started.",
+    "version": "Version",
+    "license": "License",
+    "licenseValue": "To be decided (GitHub setup in progress)"
+  },
+  "firstRun": {
+    "title": "Choisissez votre langue",
+    "subtitle": "Choose your language",
+    "hint": "You can change it later in the settings."
   }
 }

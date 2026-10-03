@@ -145,4 +145,22 @@ describe('import de l’historique Claude dans index.db', () => {
     const secondPage = new ListSessionEntries(queries()).execute(id, firstPage.nextSeq ?? -1, 3)
     expect(secondPage.entries[0]?.seq).toBe((firstPage.nextSeq ?? -1) + 1)
   })
+
+  it('reconnaît les chemins des projets et des fichiers modifiés, et rien d’autre', async () => {
+    await importer().execute()
+    expect(queries().isKnownPath('/projets/site-esf')).toBe(true)
+    expect(queries().isKnownPath('/projets/site-esf/src/lib/slugs.ts')).toBe(true)
+    expect(queries().isKnownPath('/projets/site-esf-autre/a.ts')).toBe(false)
+    expect(queries().isKnownPath('/etc/passwd')).toBe(false)
+    expect(queries().countSessions('claude')).toBe(1)
+  })
+
+  it('vide entièrement l’index avant une reconstruction', async () => {
+    await importer().execute()
+    new SqliteHistoryIndex(handle.database).clear()
+    expect(queries().listProjects()).toEqual([])
+    expect(new SqliteHistoryIndex(handle.database).cursors('claude').size).toBe(0)
+    await importer().execute()
+    expect(queries().listProjects()).toHaveLength(1)
+  })
 })

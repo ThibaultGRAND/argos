@@ -29,6 +29,9 @@ class FakeIndex implements HistoryIndex {
   cursors(): ReadonlyMap<string, ImportCursor> {
     return this.saved
   }
+  clear(): void {
+    this.saved.clear()
+  }
   resetSource(file: SourceFile): void {
     this.resets.push(file.path)
   }

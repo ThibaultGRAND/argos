@@ -18,6 +18,8 @@ function queriesWith(rows: (MessageRow | ToolCallRow)[]): SessionQueries {
     getSession: () => undefined,
     listSessionFiles: () => [],
     listEntries: (_id, afterSeq, limit) => rows.filter((row) => row.seq > afterSeq).slice(0, limit),
+    isKnownPath: () => false,
+    countSessions: () => 0,
   }
 }
 

@@ -16,7 +16,7 @@ const label = computed(
 </script>
 
 <template>
-  <article class="message" :class="`message--${entry.role}`">
+  <article class="message" :class="`message--${entry.role}`" :data-seq="entry.seq">
     <p class="message__label">{{ label }}</p>
     <MarkdownText v-if="entry.role === 'assistant'" :text="entry.text" />
     <div v-else class="message__text">{{ entry.text }}</div>
@@ -37,6 +37,18 @@ const label = computed(
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--user-bg);
+}
+
+.message--target {
+  animation: target 2.4s ease-out;
+}
+
+@keyframes target {
+  0%,
+  40% {
+    box-shadow: inset 2px 0 0 var(--acc);
+    background-color: var(--sel-bg);
+  }
 }
 
 .message__label {
