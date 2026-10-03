@@ -33,6 +33,7 @@ describe('argos.db', () => {
       language: 'fr',
       editor: 'vscode',
       firstRunCompleted: false,
+      notifications: true,
     })
     handle.close()
   })
@@ -44,6 +45,7 @@ describe('argos.db', () => {
       language: 'en',
       editor: 'cursor',
       firstRunCompleted: true,
+      notifications: false,
     })
     first.close()
 
@@ -53,6 +55,7 @@ describe('argos.db', () => {
       language: 'en',
       editor: 'cursor',
       firstRunCompleted: true,
+      notifications: false,
     })
     second.close()
   })

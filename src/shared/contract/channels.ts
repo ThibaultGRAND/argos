@@ -34,7 +34,13 @@ export const requestNames = [
 ] as const
 export type RequestName = (typeof requestNames)[number]
 
-export const eventNames = ['indexer.status', 'index.updated', 'live.event', 'snapshots.updated'] as const
+export const eventNames = [
+  'indexer.status',
+  'index.updated',
+  'live.event',
+  'snapshots.updated',
+  'app.navigate',
+] as const
 export type EventName = (typeof eventNames)[number]
 
 export const requestChannel = (name: RequestName): string => `argos:request:${name}`

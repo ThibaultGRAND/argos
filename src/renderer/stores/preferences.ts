@@ -6,7 +6,13 @@ import { argos, unwrap } from '../services/argos'
 
 /** État d'affichage des préférences ; la règle métier (valeurs par défaut, fusion) reste dans le domaine. */
 export const usePreferencesStore = defineStore('preferences', () => {
-  const preferences = ref<PreferencesDto>({ theme: 'dark', language: 'fr', editor: 'vscode', firstRunCompleted: true })
+  const preferences = ref<PreferencesDto>({
+    theme: 'dark',
+    language: 'fr',
+    editor: 'vscode',
+    firstRunCompleted: true,
+    notifications: true,
+  })
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)')
 
   function apply(): void {

@@ -12,6 +12,8 @@ export interface Preferences {
   readonly editor: EditorId
   /** Faux tant que la langue n'a pas été choisie au premier lancement (F16). */
   readonly firstRunCompleted: boolean
+  /** Notifications du système pour les sessions pilotées (F14). */
+  readonly notifications: boolean
 }
 
 /** Thème sombre, français et VSCode par défaut (PLAN.md §1.4, décisions du 2026-10-02). */
@@ -20,6 +22,7 @@ export const defaultPreferences: Preferences = {
   language: 'fr',
   editor: 'vscode',
   firstRunCompleted: false,
+  notifications: true,
 }
 
 const oneOf =
@@ -43,6 +46,8 @@ export function restorePreferences(stored: Readonly<Record<string, unknown>>): P
       typeof stored['firstRunCompleted'] === 'boolean'
         ? stored['firstRunCompleted']
         : defaultPreferences.firstRunCompleted,
+    notifications:
+      typeof stored['notifications'] === 'boolean' ? stored['notifications'] : defaultPreferences.notifications,
   }
 }
 
@@ -52,5 +57,6 @@ export function updatePreferences(current: Preferences, changes: Partial<Prefere
     language: changes.language ?? current.language,
     editor: changes.editor ?? current.editor,
     firstRunCompleted: changes.firstRunCompleted ?? current.firstRunCompleted,
+    notifications: changes.notifications ?? current.notifications,
   }
 }

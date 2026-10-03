@@ -14,6 +14,8 @@ import { LiveCommands } from '../core/application/live/live-commands'
 import { LiveSessions, type LiveSessionsListener } from '../core/application/live/live-sessions'
 import { SnapshotService } from '../core/application/snapshots/snapshot-service'
 import { ReviewService } from '../core/application/review/review-service'
+import { NotificationService } from '../core/application/notifications/notification-service'
+import { resolveSessionTitle } from '../core/domain/history/session-title'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
 import type { IndexerControl } from '../core/domain/ports/indexer-control'
@@ -31,6 +33,8 @@ import { resolveClaudeProjectsDirectory } from '../infrastructure/system/claude-
 import { ElectronEditorLauncher } from './adapters/electron-editor-launcher'
 import { ElectronAppMetadata } from './adapters/electron-app-metadata'
 import { ElectronLinkOpener } from './adapters/electron-link-opener'
+import { ElectronAppPresence, ElectronNotifier } from './adapters/electron-notifier'
+import { IntlifyTranslator } from './adapters/intlify-translator'
 import type { RequestHandlers } from './ipc/register'
 import type { Snapshot } from '../core/domain/snapshots/snapshot'
 import type { ReviewCommentDto, SnapshotDto } from '../shared/contract'
@@ -49,6 +53,8 @@ export interface CompositionContext {
   readonly environment: NodeJS.ProcessEnv
   readonly liveListener: Pick<LiveSessionsListener, 'onEvent'>
   readonly onSnapshotsChanged: (sessionExternalId: string) => void
+  /** Ramène Argos au premier plan sur une session (clic sur une notification). */
+  readonly openSession: (sessionId: number | null) => void
   readonly log: (message: string) => void
 }
 
@@ -59,6 +65,7 @@ export function compose({
   environment,
   liveListener,
   onSnapshotsChanged,
+  openSession,
   log,
 }: CompositionContext): Composition {
   const argosDb = openArgosDatabase({
@@ -116,6 +123,7 @@ export function compose({
     {
       onEvent: (runId, event) => {
         liveListener.onEvent(runId, event)
+        void notificationService.onLiveEvent(runId, event)
         if (event.type === 'identified') {
           snapshotService.identified(runId, event.sessionExternalId)
           // Dès que la session a un identifiant, son fichier existe : l'import la fait apparaître dans la liste.
@@ -130,6 +138,39 @@ export function compose({
     },
     randomUUID,
   )
+  const notificationService: NotificationService = new NotificationService({
+    notifier: new ElectronNotifier(),
+    presence: new ElectronAppPresence(),
+    translator: new IntlifyTranslator(),
+    preferences: preferencesRepository,
+    runs: () =>
+      new Map(
+        liveSessions.list().map((run) => [
+          run.runId,
+          {
+            sessionExternalId: run.sessionExternalId,
+            projectPath: run.projectPath,
+            waiting: run.status === 'waiting',
+          },
+        ]),
+      ),
+    describeSession: (run) => {
+      const sessionId =
+        run.sessionExternalId === null ? undefined : sessionQueries.findSessionIdByExternal(run.sessionExternalId)
+      const session = sessionId === undefined ? undefined : sessionQueries.getSession(sessionId)
+      const title =
+        session === undefined
+          ? null
+          : resolveSessionTitle({
+              customTitle: session.customTitle,
+              generatedTitle: session.generatedTitle,
+              firstPrompt: session.firstPrompt,
+            })
+      // Session pas encore importée : le nom du dossier du projet sert de titre.
+      return { title: title ?? (run.projectPath.split(/[\\/]/).pop() || run.projectPath), sessionId: sessionId ?? null }
+    },
+    open: openSession,
+  })
   const liveCommands = new LiveCommands(liveSessions, sessionQueries, snapshotService)
   const reviewService = new ReviewService({
     shadow,

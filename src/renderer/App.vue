@@ -57,6 +57,10 @@ onMounted(async () => {
   await live.load()
   snapshots.watchUpdates()
   review.watchSnapshots()
+  // Clic sur une notification : ouvre la session concernée (F14).
+  window.argos.on('app.navigate', ({ sessionId }) => {
+    if (sessionId !== null) void router.push({ name: 'session', params: { id: sessionId } })
+  })
   session.watchIndex()
   await history.loadProjects()
   ready.value = true

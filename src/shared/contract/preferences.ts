@@ -10,6 +10,7 @@ export const PreferencesSchema = z.object({
   language: LanguageSchema,
   editor: EditorSchema,
   firstRunCompleted: z.boolean(),
+  notifications: z.boolean(),
 })
 export type PreferencesDto = z.infer<typeof PreferencesSchema>
 

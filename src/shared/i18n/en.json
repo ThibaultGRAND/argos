@@ -176,10 +176,11 @@
     "open": "Settings",
     "sections": {
       "appearance": "A. Appearance",
-      "editor": "B. Editor",
-      "sources": "C. Sources",
-      "data": "D. Data",
-      "about": "E. About"
+      "notifications": "B. Notifications",
+      "editor": "C. Editor",
+      "sources": "D. Sources",
+      "data": "E. Data",
+      "about": "F. About"
     },
     "theme": "Theme",
     "language": "Language",
@@ -195,7 +196,11 @@
     "rebuildStarted": "Index rebuild started.",
     "version": "Version",
     "license": "License",
-    "licenseValue": "To be decided (GitHub setup in progress)"
+    "licenseValue": "To be decided (GitHub setup in progress)",
+    "notifications": "Notifications",
+    "notificationsHelp": "When Argos is in the background: permission requested, turn finished, error.",
+    "on": "On",
+    "off": "Off"
   },
   "firstRun": {
     "title": "Choisissez votre langue",
@@ -280,5 +285,19 @@
     "send": "Send to the agent",
     "sentNotice": "Comments sent to the agent.",
     "lineTitle": "Open at line {line}"
+  },
+  "notifications": {
+    "permission": {
+      "title": "Claude needs your permission",
+      "body": "{session}: {action}"
+    },
+    "turnCompleted": {
+      "title": "Turn finished",
+      "body": "{session}: finished in {seconds} s"
+    },
+    "error": {
+      "title": "Session error",
+      "body": "{session}: the agent stopped on an error."
+    }
   }
 }

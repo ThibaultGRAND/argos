@@ -176,10 +176,11 @@
     "open": "Paramètres",
     "sections": {
       "appearance": "A. Apparence",
-      "editor": "B. Éditeur",
-      "sources": "C. Sources",
-      "data": "D. Données",
-      "about": "E. À propos"
+      "notifications": "B. Notifications",
+      "editor": "C. Éditeur",
+      "sources": "D. Sources",
+      "data": "E. Données",
+      "about": "F. À propos"
     },
     "theme": "Thème",
     "language": "Langue",
@@ -195,7 +196,11 @@
     "rebuildStarted": "Reconstruction de l'index lancée.",
     "version": "Version",
     "license": "Licence",
-    "licenseValue": "À définir (configuration GitHub en cours)"
+    "licenseValue": "À définir (configuration GitHub en cours)",
+    "notifications": "Notifications",
+    "notificationsHelp": "Quand Argos est en arrière-plan : permission demandée, tour terminé, erreur.",
+    "on": "Activées",
+    "off": "Désactivées"
   },
   "firstRun": {
     "title": "Choisissez votre langue",
@@ -280,5 +285,19 @@
     "send": "Envoyer à l'agent",
     "sentNotice": "Commentaires envoyés à l'agent.",
     "lineTitle": "Ouvrir à la ligne {line}"
+  },
+  "notifications": {
+    "permission": {
+      "title": "Claude attend ta permission",
+      "body": "{session} : {action}"
+    },
+    "turnCompleted": {
+      "title": "Tour terminé",
+      "body": "{session} : terminé en {seconds} s"
+    },
+    "error": {
+      "title": "Session en erreur",
+      "body": "{session} : l'agent s'est arrêté sur une erreur."
+    }
   }
 }

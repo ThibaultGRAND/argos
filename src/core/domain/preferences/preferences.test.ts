@@ -3,11 +3,20 @@ import { defaultPreferences, restorePreferences, updatePreferences } from './pre
 
 describe('restorePreferences', () => {
   it('reprend des préférences valides', () => {
-    expect(restorePreferences({ theme: 'light', language: 'en', editor: 'cursor', firstRunCompleted: true })).toEqual({
+    expect(
+      restorePreferences({
+        theme: 'light',
+        language: 'en',
+        editor: 'cursor',
+        firstRunCompleted: true,
+        notifications: false,
+      }),
+    ).toEqual({
       theme: 'light',
       language: 'en',
       editor: 'cursor',
       firstRunCompleted: true,
+      notifications: false,
     })
   })
 

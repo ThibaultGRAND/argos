@@ -1,4 +1,4 @@
-import type { z } from 'zod'
+import { z } from 'zod'
 import type { EventName } from './channels'
 import { IndexUpdatedSchema } from './history'
 import { IndexerStatusSchema } from './indexer'
@@ -11,6 +11,7 @@ export const events = {
   'index.updated': IndexUpdatedSchema,
   'live.event': LiveEventEnvelopeSchema,
   'snapshots.updated': SnapshotsUpdatedSchema,
+  'app.navigate': z.object({ sessionId: z.number().int().nullable() }),
 } as const satisfies Record<EventName, z.ZodType>
 
 export type Events = typeof events

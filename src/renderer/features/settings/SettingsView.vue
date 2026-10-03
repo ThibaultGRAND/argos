@@ -107,6 +107,28 @@ onBeforeUnmount(() => {
     </section>
 
     <section class="settings__section">
+      <UiMarker :label="t('settings.sections.notifications')" />
+      <div class="settings__row">
+        <span class="settings__label">
+          {{ t('settings.notifications') }}
+          <span class="settings__help">{{ t('settings.notificationsHelp') }}</span>
+        </span>
+        <div class="settings__choices">
+          <button
+            v-for="enabled in [true, false]"
+            :key="String(enabled)"
+            type="button"
+            class="settings__choice"
+            :class="{ 'settings__choice--active': preferences.notifications === enabled }"
+            @click="update({ notifications: enabled })"
+          >
+            {{ t(enabled ? 'settings.on' : 'settings.off') }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="settings__section">
       <UiMarker :label="t('settings.sections.editor')" />
       <div class="settings__row">
         <span class="settings__label">{{ t('settings.editorLabel') }}</span>

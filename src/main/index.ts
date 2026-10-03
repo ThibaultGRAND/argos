@@ -15,6 +15,9 @@ if (!app.isPackaged) {
   app.setPath('userData', join(app.getPath('appData'), 'Argos-dev'))
 }
 
+// Windows : identifiant de l'app, nécessaire aux notifications (F14).
+app.setAppUserModelId('com.thibaultgrand.argos')
+
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 }
@@ -43,6 +46,15 @@ app.whenReady().then(
       environment,
       liveListener: { onEvent: (runId, event) => broadcast('live.event', { runId, event: toLiveEventDto(event) }) },
       onSnapshotsChanged: (sessionExternalId) => broadcast('snapshots.updated', { sessionExternalId }),
+      openSession: (sessionId) => {
+        const [window] = BrowserWindow.getAllWindows()
+        if (window !== undefined) {
+          if (window.isMinimized()) window.restore()
+          window.show()
+          window.focus()
+        }
+        broadcast('app.navigate', { sessionId })
+      },
       log,
     })
     registerRequestHandlers(composition.handlers, log)
