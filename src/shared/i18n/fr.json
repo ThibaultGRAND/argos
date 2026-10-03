@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "Argos"
+  },
+  "nav": {
+    "search": "Rechercher",
+    "sessions": "Sessions",
+    "newSession": "Nouvelle",
+    "noProject": "Aucun projet"
+  },
+  "sessions": {
+    "filters": {
+      "all": "Toutes",
+      "running": "En cours",
+      "waiting": "En attente",
+      "done": "Terminées"
+    },
+    "filterPlaceholder": "Filtrer les sessions",
+    "empty": {
+      "title": "Aucune session",
+      "body": "Les sessions de vos agents apparaîtront ici après l'import."
+    }
+  },
+  "document": {
+    "empty": {
+      "title": "Aucune session sélectionnée",
+      "body": "Choisissez une session dans la liste pour lire son compte rendu."
+    }
+  },
+  "panel": {
+    "files": "D. Fichiers",
+    "snapshots": "E. Snapshots",
+    "sheet": "F. Fiche",
+    "empty": "Rien pour l'instant"
+  },
+  "status": {
+    "version": "v{version}",
+    "indexer": {
+      "starting": "Indexeur : démarrage",
+      "ready": "Indexeur : prêt",
+      "error": "Indexeur : erreur"
+    },
+    "theme": {
+      "label": "Thème",
+      "dark": "Sombre",
+      "light": "Clair",
+      "system": "Système"
+    },
+    "language": {
+      "label": "Langue",
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "errors": {
+    "unknown": "Une erreur inattendue est survenue.",
+    "invalid_input": "La demande envoyée est invalide.",
+    "unknown_request": "Cette action n'existe pas."
+  }
+}

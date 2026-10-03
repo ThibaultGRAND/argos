@@ -1,0 +1,50 @@
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { openArgosDatabase } from './argos-database'
+import { SqlitePreferencesRepository } from './preferences-repository'
+
+const migrationsFolder = resolve(__dirname, 'migrations')
+
+describe('argos.db', () => {
+  let directory: string
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), 'argos-test-'))
+  })
+
+  afterEach(() => {
+    rmSync(directory, { recursive: true, force: true })
+  })
+
+  const open = () =>
+    openArgosDatabase({
+      path: join(directory, 'argos.db'),
+      migrationsFolder,
+      backupDirectory: join(directory, 'backups'),
+    })
+
+  it('renvoie les préférences par défaut sur une base neuve', async () => {
+    const handle = open()
+    const repository = new SqlitePreferencesRepository(handle.database)
+    expect(await repository.load()).toEqual({ theme: 'dark', language: 'fr' })
+    handle.close()
+  })
+
+  it('conserve les préférences enregistrées après réouverture', async () => {
+    const first = open()
+    await new SqlitePreferencesRepository(first.database).save({ theme: 'light', language: 'en' })
+    first.close()
+
+    const second = open()
+    expect(await new SqlitePreferencesRepository(second.database).load()).toEqual({ theme: 'light', language: 'en' })
+    second.close()
+  })
+
+  it('ne fait pas de copie de sauvegarde pour une base neuve ni sans migration en attente', () => {
+    open().close()
+    open().close()
+    expect(() => readdirSync(join(directory, 'backups'))).toThrow()
+  })
+})

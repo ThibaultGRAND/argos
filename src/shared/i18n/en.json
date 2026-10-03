@@ -1,0 +1,60 @@
+{
+  "app": {
+    "name": "Argos"
+  },
+  "nav": {
+    "search": "Search",
+    "sessions": "Sessions",
+    "newSession": "New",
+    "noProject": "No project"
+  },
+  "sessions": {
+    "filters": {
+      "all": "All",
+      "running": "Running",
+      "waiting": "Waiting",
+      "done": "Done"
+    },
+    "filterPlaceholder": "Filter sessions",
+    "empty": {
+      "title": "No sessions",
+      "body": "Your agents' sessions will appear here once imported."
+    }
+  },
+  "document": {
+    "empty": {
+      "title": "No session selected",
+      "body": "Pick a session from the list to read its report."
+    }
+  },
+  "panel": {
+    "files": "D. Files",
+    "snapshots": "E. Snapshots",
+    "sheet": "F. Sheet",
+    "empty": "Nothing yet"
+  },
+  "status": {
+    "version": "v{version}",
+    "indexer": {
+      "starting": "Indexer: starting",
+      "ready": "Indexer: ready",
+      "error": "Indexer: error"
+    },
+    "theme": {
+      "label": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    },
+    "language": {
+      "label": "Language",
+      "fr": "Français",
+      "en": "English"
+    }
+  },
+  "errors": {
+    "unknown": "An unexpected error occurred.",
+    "invalid_input": "The request is invalid.",
+    "unknown_request": "This action does not exist."
+  }
+}

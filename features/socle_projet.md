@@ -1,6 +1,6 @@
 # Étape 0 — Socle du projet
 
-**Statut** : brouillon
+**Statut** : à tester
 **Version cible** : avant V0
 **Dépend de** : PLAN.md §2 (architecture) et §3 (stack)
 **Écrans** : coquille de la maquette globale 2a, sans contenu fonctionnel
@@ -19,16 +19,16 @@ ses propres règles. Sans ce socle, chaque fonctionnalité réinventerait l'outi
 - L'indexeur démarre et répond à un message de test : preuve de la chaîne principal ↔ indexeur.
 
 ## Critères d'acceptation
-- [ ] `npm run dev` lance l'app sur macOS avec la coquille C1, en sombre et en clair, en français et en anglais.
-- [ ] `npm run typecheck`, `npm run lint`, `npm run test` et `npm run check:architecture` passent sans erreur.
-- [ ] dependency-cruiser **échoue** si on ajoute volontairement un import interdit (vérifié une fois, puis retiré).
-- [ ] Le test de parité des traductions échoue si une clé manque dans une langue.
-- [ ] La version de l'app s'affiche dans la barre d'état via IPC.
-- [ ] Les deux bases sont créées au bon endroit, une copie de `argos.db` est faite avant migration.
-- [ ] L'indexeur répond au message de test.
-- [ ] `npm run build:mac` produit une app qui se lance.
-- [ ] GitHub Actions exécute typecheck, lint, tests et architecture sur macOS, Windows et Linux.
-- [ ] La fenêtre respecte la sécurité définie (isolation, sandbox, CSP, aucun contenu distant).
+- [x] `npm run dev` lance l'app sur macOS avec la coquille C1, en sombre et en clair, en français et en anglais.
+- [x] `npm run typecheck`, `npm run lint`, `npm run test` et `npm run check:architecture` passent sans erreur.
+- [x] dependency-cruiser **échoue** si on ajoute volontairement un import interdit (vérifié une fois, puis retiré).
+- [x] Le test de parité des traductions échoue si une clé manque dans une langue.
+- [x] La version de l'app s'affiche dans la barre d'état via IPC.
+- [x] Les deux bases sont créées au bon endroit, une copie de `argos.db` est faite avant migration.
+- [x] L'indexeur répond au message de test.
+- [x] `npm run build:mac` produit une app qui se lance.
+- [ ] GitHub Actions exécute (workflow écrit, à vérifier au premier push) typecheck, lint, tests et architecture sur macOS, Windows et Linux.
+- [x] La fenêtre respecte la sécurité définie (isolation, sandbox, CSP, aucun contenu distant).
 
 ## Conception technique
 
@@ -65,7 +65,8 @@ Alias TypeScript : `@shared`, `@core`, `@infrastructure`, `@main`, `@renderer`.
 
 ### Bases
 - Infrastructure de migrations pour `index.db` et `argos.db` (deux séries, deux configurations drizzle-kit).
-- **Une seule table dans le socle : `settings`** dans `argos.db` (`key` TEXT clé primaire, `value` TEXT JSON validé par Zod, `updated_at`).
+- **Une seule table dans le socle : `settings`** dans `argos.db` : `id` TEXT UUID (convention CLAUDE.md §5.2), `key` TEXT unique,
+  `value` TEXT (JSON relu par le domaine, valeurs invalides remplacées par les valeurs par défaut), `created_at`, `updated_at`.
   Elle sert à mémoriser le thème et la langue. Les tables de l'index arrivent avec F01.
 - Mode WAL, clés étrangères activées, délai d'attente configuré, copie de `argos.db` avant migration (5 dernières conservées).
 
@@ -96,3 +97,15 @@ Un workflow `ci.yml` : `npm ci` puis `npm run verify` sur macOS, Windows et Linu
 6. **0.6 CI et build** : workflow GitHub Actions, configuration electron-builder, `build:mac` vérifié.
 
 Après la 0.6 : **test utilisateur par Thibault**, puis passage à F01.
+
+## Bilan de l'implémentation (2026-10-02)
+- **Versions** : Electron 44, Vue 3.5, **Vite 7** (electron-vite 5 ne prend pas encore Vite 8), **TypeScript 6.0**
+  (typescript-eslint exige une version inférieure à 6.1), Zod 4, Drizzle 0.45, better-sqlite3 13.
+- **better-sqlite3 13 fournit des binaires précompilés** qui se chargent dans Node et dans Electron : les tests tournent directement avec Vitest.
+- **Le preload n'importe aucune bibliothèque** : les noms des canaux sont dans `shared/contract/channels.ts`, sans Zod
+  (un preload en sandbox ne peut pas charger de module npm). `satisfies` garantit que les schémas couvrent exactement ces noms.
+- **Données du mode développement séparées** : `Argos-dev/` au lieu de `Argos/`, pour ne jamais toucher les vraies données.
+- **Dépendances de l'interface en devDependencies** : elles sont intégrées au bundle, l'app packagée ne les embarque pas en double.
+- **index.db** est créé et ouvert par l'indexeur ; ses tables et sa série de migrations arrivent avec F01.
+- **Non vérifié localement** : build Windows et Linux, CI GitHub Actions (au premier push).
+- Taille de l'app macOS : environ 330 Mo, essentiellement Electron lui-même.

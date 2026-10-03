@@ -1,0 +1,48 @@
+/* Tokens de la direction C1 « Compte rendu imprimé » (maquettes/prompts/00_description_app.md). */
+:root {
+  --font-text: 'Schibsted Grotesk', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --size-nav: 320px;
+  --size-panel: 300px;
+  --size-document: 720px;
+  --size-titlebar: 40px;
+  --size-statusbar: 30px;
+  --size-title: 30px;
+  --gap-entry: 14px;
+  --radius: 3px;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #1c1a17;
+  --side: #1c1a17;
+  --raised: #24211d;
+  --term: #161412;
+  --input: #201e1b;
+  --rule: #33302b;
+  --rule2: #4a453f;
+  --tx: #ece6dc;
+  --tx2: #a89f93;
+  --tx3: #786f65;
+  --acc: #d2694b;
+  --sel-bg: #25221e;
+  --user-bg: #2a2621;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f4f0e8;
+  --side: #f4f0e8;
+  --raised: #ece7dd;
+  --term: #ebe5da;
+  --input: #faf7f1;
+  --rule: #dcd5c8;
+  --rule2: #bdb4a5;
+  --tx: #1f1c18;
+  --tx2: #5e574d;
+  --tx3: #8a8276;
+  --acc: #a8442a;
+  --sel-bg: #ebe5da;
+  --user-bg: #fbf9f4;
+}

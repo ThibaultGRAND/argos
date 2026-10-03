@@ -614,7 +614,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 4 | **Maquette globale** (Claude Design) | Lien en §6, validé | terminée (export à déposer) |
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
 | 6 | Architecture globale | PLAN.md §2 | terminée |
-| 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | brouillon |
+| 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | à tester |
 | 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la validation du plan de l'étape 0 (socle).
