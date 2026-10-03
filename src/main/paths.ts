@@ -29,7 +29,7 @@ export function resolveAppPaths(): AppPaths {
   return paths
 }
 
-/** Les migrations sont copiées dans les ressources de l'app packagée (electron-builder.yml). */
+/** Les migrations sont copiées dans les ressources de l'app packagée (config/electron-builder.yml). */
 function migrationsFolder(database: 'argos' | 'index'): string {
   return app.isPackaged
     ? join(process.resourcesPath, 'migrations', database)

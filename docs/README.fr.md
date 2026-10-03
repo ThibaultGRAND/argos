@@ -1,11 +1,11 @@
 # Argos
 
-[English](README.md) · **Français**
+[English](../README.md) · **Français**
 
 Poste de pilotage local pour agents de code IA (Claude Code, puis Codex et Gemini CLI) :
 je retrouve tout, je relis tout, je peux tout annuler, et je sais toujours ce que font mes agents.
 
-Projet personnel, gratuit, sans serveur. Plan et règles : [PLAN.md](PLAN.md), [CLAUDE.md](CLAUDE.md).
+Projet personnel, gratuit, sans serveur. Plan et règles : [PLAN.md](../PLAN.md), [CLAUDE.md](../CLAUDE.md).
 
 > **État** : en développement (avant la V0). Pas encore de version publiée.
 
@@ -32,9 +32,9 @@ Au premier lancement, macOS bloque l'app : faire clic droit sur Argos > Ouvrir, 
 
 ## Contribuer
 
-Les pull requests sont les bienvenues : voir [CONTRIBUTING.fr.md](CONTRIBUTING.fr.md).
-Pour signaler une faille de sécurité, voir [SECURITY.md](SECURITY.md) (jamais dans une issue publique).
+Les pull requests sont les bienvenues : voir [CONTRIBUTING.fr.md](../.github/CONTRIBUTING.fr.md).
+Pour signaler une faille de sécurité, voir [SECURITY.md](../.github/SECURITY.md) (jamais dans une issue publique).
 
 ## Licence
 
-[MIT](LICENSE) © 2026 Thibault Grand
+[MIT](../LICENSE) © 2026 Thibault Grand

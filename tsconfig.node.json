@@ -13,8 +13,6 @@
     "src/indexer/**/*",
     "src/preload/**/*",
     "electron.vite.config.ts",
-    "drizzle.argos.config.ts",
-    "drizzle.index.config.ts",
     "vitest.config.ts"
   ]
 }

@@ -22,18 +22,18 @@
     "postinstall": "electron-builder install-app-deps",
     "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "build:mac": "electron-vite build && electron-builder --mac",
-    "build:win": "electron-vite build && electron-builder --win",
-    "build:linux": "electron-vite build && electron-builder --linux",
+    "build:mac": "electron-vite build && electron-builder --mac --config config/electron-builder.yml",
+    "build:win": "electron-vite build && electron-builder --win --config config/electron-builder.yml",
+    "build:linux": "electron-vite build && electron-builder --linux --config config/electron-builder.yml",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && vue-tsc --noEmit -p tsconfig.web.json",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "check:architecture": "depcruise src --config .dependency-cruiser.cjs",
-    "db:generate:argos": "drizzle-kit generate --config drizzle.argos.config.ts",
+    "check:architecture": "depcruise src --config config/dependency-cruiser.cjs",
+    "db:generate:argos": "drizzle-kit generate --config src/infrastructure/database/argos/drizzle.config.ts",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run check:architecture && npm run test",
-    "db:generate:index": "drizzle-kit generate --config drizzle.index.config.ts"
+    "db:generate:index": "drizzle-kit generate --config src/infrastructure/database/index/drizzle.config.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.3.288",
@@ -81,5 +81,11 @@
     "electron-winstaller@5.4.0": true,
     "electron@44.5.1": true,
     "fsevents@2.3.3": true
+  },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 120,
+    "trailingComma": "all"
   }
 }

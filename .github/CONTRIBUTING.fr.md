@@ -12,7 +12,7 @@ mais c'est le mainteneur ([@ThibaultGRAND](https://github.com/ThibaultGRAND)) qu
 - **Petite correction** (coquille, bug évident) : ouvre directement une pull request.
 - **Tout le reste** (nouvelle fonctionnalité, changement de comportement, nouvelle dépendance) : ouvre d'abord
   une issue, pour qu'on se mette d'accord sur l'approche avant que tu y passes du temps.
-- Lis [PLAN.md](PLAN.md) (architecture, roadmap, décisions) et [CLAUDE.md](CLAUDE.md) (règles de travail).
+- Lis [PLAN.md](../PLAN.md) (architecture, roadmap, décisions) et [CLAUDE.md](../CLAUDE.md) (règles de travail).
   Une décision inscrite au journal des décisions de PLAN.md ne se rediscute pas sans motif nouveau.
 
 ## Contraintes non négociables
@@ -78,7 +78,7 @@ Les commits peuvent être en français ou en anglais.
 
 ## Licence
 
-En contribuant, tu acceptes que tes contributions soient placées sous la [licence MIT](LICENSE) du projet.
+En contribuant, tu acceptes que tes contributions soient placées sous la [licence MIT](../LICENSE) du projet.
 
 ## Code de conduite
 

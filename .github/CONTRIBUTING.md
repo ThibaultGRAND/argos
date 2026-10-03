@@ -10,7 +10,7 @@ the maintainer ([@ThibaultGRAND](https://github.com/ThibaultGRAND)) decides what
 - **Small fix** (typo, obvious bug): open a pull request directly.
 - **Anything bigger** (new feature, behavior change, new dependency): open an issue first, so we can agree
   on the approach before you spend time on it.
-- Read [PLAN.md](PLAN.md) (architecture, roadmap, decisions) and [CLAUDE.md](CLAUDE.md) (working rules).
+- Read [PLAN.md](../PLAN.md) (architecture, roadmap, decisions) and [CLAUDE.md](../CLAUDE.md) (working rules).
   Both are in French. A decision recorded in the PLAN.md decision log is not reopened without a new reason.
 
 ## Non-negotiable constraints
@@ -75,7 +75,7 @@ Commits may be written in English or French.
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE)
+By contributing, you agree that your contributions are licensed under the [MIT License](../LICENSE)
 of this project.
 
 ## Code of conduct

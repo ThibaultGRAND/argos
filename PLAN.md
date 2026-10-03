@@ -526,6 +526,7 @@ Les versions cibles sont **validées** (voir §5).
 | F14 | Notifications système (minimale en V1, complète en V3) | V1 / V3 | à définir | `features/notifications.md` |
 | F15 | Multi-fournisseur complet via ACP (Codex, Gemini) | V3 | à définir | `features/providers.md` |
 | F16 | Paramètres et premier lancement (langue, thème, éditeur, sources, reconstruction de l'index) | V0 | terminé | [features/settings.md](features/settings.md) |
+| F17 | Disposition personnalisable (redimensionner, déplacer et masquer les panneaux) | V1 | à définir | [features/custom_layout.md](features/custom_layout.md) |
 
 ## 5. Roadmap
 
@@ -625,7 +626,7 @@ Statuts : `à faire` · `en cours` · `terminée`
 | 5 | Choix de la stack | PLAN.md §3 + décision au journal | terminée |
 | 6 | Architecture globale | PLAN.md §2 | terminée |
 | 7 | **Étape 0 — Socle du projet** : outillage, squelette d'architecture, IPC, bases, coquille d'interface C1 | [features/socle_projet.md](features/socle_projet.md) | terminée |
-| 7b | **Dépôt GitHub** : dépôt public `ThibaultGRAND/argos`, licence MIT, ruleset sur `main`, fichiers d'accueil des contributeurs, sécurité gratuite | `LICENSE`, `CONTRIBUTING.md`, `SECURITY.md`, `.github/` | terminée |
+| 7b | **Dépôt GitHub** : dépôt public `ThibaultGRAND/argos`, licence MIT, ruleset sur `main`, fichiers d'accueil des contributeurs, sécurité gratuite | `LICENSE`, `.github/` (CONTRIBUTING, SECURITY, CODE_OF_CONDUCT) | terminée |
 | 8 | Par fonctionnalité, dans l'ordre de la roadmap : fiche courte → code → test utilisateur → corrections → suivante ([CLAUDE.md](CLAUDE.md) §3.2) | Un cycle par fonctionnalité | à faire |
 
 Aucun code avant la validation du plan de l'étape 0 (socle).
@@ -671,3 +672,5 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-03 | `main` protégée par un **ruleset** : PR obligatoire, 1 approbation, ni push forcé ni suppression, contournement réservé à l'admin (Thibault) ; seul Thibault fusionne | Protection de branche classique ; amis avec droit d'écriture | Rulesets plus souples et visibles de tous ; Thibault reste seul à décider de ce qui entre dans `main` |
 | 2026-10-03 | Fichiers du projet en **anglais**, avec une version française de `README` et `CONTRIBUTING` ; aucune politique spécifique sur le code écrit par IA | Tout en français ; tout bilingue | Ouvert aux contributeurs non francophones sans doubler toute la maintenance |
 | 2026-10-03 | Pilotage de Claude avec l'**Agent SDK** (`@anthropic-ai/claude-agent-sdk` + `@anthropic-ai/sdk` + `@modelcontextprotocol/sdk`), exécuté avec la CLI `claude` installée | CLI en mode `-p` avec flux JSON | Permissions dans Argos (`canUseTool`), interruption, reprise et modèles fournis ; la CLI installée reste l'exécutable |
+| 2026-10-03 | F17 disposition personnalisable : panneaux déplaçables entre colonnes, redimensionnables et masquables | Ancrage libre façon VSCode ; simple inversion des côtés | Couvre l'essentiel de la personnalisation sans la complexité d'un système d'ancrage |
+| 2026-10-03 | Rangement de la racine du dépôt, sans déplacer PLAN.md ni features/ | Tout ranger dans docs/ | Garder la structure de CLAUDE.md §4.1 |

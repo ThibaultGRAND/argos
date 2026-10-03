@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Security problem? Do not open an issue: see [SECURITY.md](https://github.com/ThibaultGRAND/argos/blob/main/SECURITY.md).
+        Security problem? Do not open an issue: see [SECURITY.md](https://github.com/ThibaultGRAND/argos/blob/main/.github/SECURITY.md).
         You can write in English or French.
   - type: textarea
     id: what-happened

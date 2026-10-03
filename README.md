@@ -1,6 +1,6 @@
 # Argos
 
-**English** · [Français](README.fr.md)
+**English** · [Français](docs/README.fr.md)
 
 A local cockpit for AI coding agents (Claude Code, then Codex and Gemini CLI):
 find everything, review everything, undo anything, and always know what your agents are doing.
@@ -32,8 +32,8 @@ On first launch, macOS blocks the app: right-click Argos > Open, or run
 
 ## Contributing
 
-Pull requests are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
-To report a security vulnerability, see [SECURITY.md](SECURITY.md) (never in a public issue).
+Pull requests are welcome: see [CONTRIBUTING.md](.github/CONTRIBUTING.md).
+To report a security vulnerability, see [SECURITY.md](.github/SECURITY.md) (never in a public issue).
 
 ## License
 
