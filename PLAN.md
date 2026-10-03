@@ -510,8 +510,8 @@ Les versions cibles sont **validées** (voir §5).
 
 | # | Fonctionnalité | Version | Statut | Plan détaillé |
 |---|---|---|---|---|
-| F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | à tester | [features/session_import.md](features/session_import.md) |
-| F02 | Navigateur d'historique par projet | V0 | à définir | `features/history_browser.md` |
+| F01 | Import des sessions (Claude, puis Codex, Gemini) | V0 | terminé | [features/session_import.md](features/session_import.md) |
+| F02 | Navigateur d'historique : compte rendu d'une session | V0 | à tester | [features/session_detail.md](features/session_detail.md) |
 | F03 | Recherche plein texte | V0 | à définir | `features/full_text_search.md` |
 | F04 | Ouvrir dans VSCode (projet, fichier, review) | V0 | à définir | — (une ligne suffit) |
 | F05 | Lancer et piloter une session d'agent | V1 | à définir | `features/agent_sessions.md` |
@@ -649,3 +649,5 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-02 | Les JSONL des CLI sont la seule source de l'index ; contrat IPC typé (Zod, `Result`, `window.argos` généré) | Écrire aussi les messages reçus en direct ; exceptions à travers l'IPC | Un seul chemin d'écriture ; erreurs traduisibles ; aucune dérive entre types et validation |
 | 2026-10-02 | Stockage : deux bases (`index.db` reconstructible, `argos.db` propre à Argos), références par clés naturelles stables, git fantôme par projet via le git système (prérequis dès la V1) | Une seule base ; clés étrangères vers l'index ; bibliothèque git JavaScript | Un écrivain par fichier, reconstruction sans risque, snapshots fidèles et rapides |
 | 2026-10-02 | Après le socle, cycle court par fonctionnalité : fiche courte, code, test utilisateur, corrections | Plan détaillé validé avant chaque fonctionnalité | Architecture et liste des fonctionnalités validées ; avancer vite avec un retour utilisateur réel |
+| 2026-10-03 | Rendu Markdown des réponses de l'agent avec **markdown-it** (HTML brut et images désactivés, liens ouverts hors de l'app) | Texte brut ; marked + DOMPurify | Lisibilité comparable à Claude ; sûr sans bibliothèque de nettoyage supplémentaire |
+| 2026-10-03 | Coloration syntaxique avec **highlight.js** (langages courants, thème C1 par classes CSS) | Shiki | Synchrone avec markdown-it, léger, thème fidèle aux tokens C1 en sombre et clair |

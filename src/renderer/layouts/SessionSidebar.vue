@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
 import ProjectPicker from '../features/history/ProjectPicker.vue'
 import SessionListItem from '../features/history/SessionListItem.vue'
 import { useHistoryStore } from '../stores/history'
@@ -10,6 +11,7 @@ import UiMarker from '../ui/UiMarker.vue'
 
 /** Barre latérale 2a : projet, recherche, sessions filtrables par statut et par titre. */
 const history = useHistoryStore()
+const router = useRouter()
 const { projects, selectedProject, sessions, selectedSessionId, error } = storeToRefs(history)
 
 const filters = ['all', 'running', 'waiting', 'done'] as const
@@ -33,11 +35,18 @@ watch(selectedProject, () => {
   filterText.value = ''
   activeFilter.value = 'all'
 })
+
+/** Choisir un autre projet dans le sélecteur ferme la session ouverte. */
+async function chooseProject(projectId: number): Promise<void> {
+  if (projectId === selectedProject.value?.id) return
+  await history.selectProject(projectId)
+  await router.push({ name: 'home' })
+}
 </script>
 
 <template>
   <aside class="sidebar">
-    <ProjectPicker :projects="projects" :selected="selectedProject" @select="history.selectProject" />
+    <ProjectPicker :projects="projects" :selected="selectedProject" @select="chooseProject" />
 
     <div class="sidebar__block">
       <UiButton class="sidebar__search" shortcut="⌘K" disabled>{{ $t('nav.search') }}</UiButton>
@@ -79,7 +88,7 @@ watch(selectedProject, () => {
         :key="session.id"
         :session="session"
         :selected="session.id === selectedSessionId"
-        @select="history.selectSession(session.id)"
+        @select="router.push({ name: 'session', params: { id: session.id } })"
       />
 
       <UiEmptyState
@@ -126,13 +135,17 @@ watch(selectedProject, () => {
 
 .sidebar__filters {
   display: flex;
-  gap: 14px;
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
   padding: 10px 16px 0;
   border-bottom: 1px solid var(--rule);
 }
 
 .sidebar__filter {
+  flex: none;
   padding: 6px 0;
+  white-space: nowrap;
   border: 0;
   border-bottom: 1px solid transparent;
   margin-bottom: -1px;

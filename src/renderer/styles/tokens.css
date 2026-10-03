@@ -28,6 +28,16 @@
   --acc: #d2694b;
   --sel-bg: #25221e;
   --user-bg: #2a2621;
+
+  /* Coloration syntaxique : palette chaude et sobre, l'accent brique réservé aux mots-clés. */
+  --code-keyword: #d2694b;
+  --code-string: #a8b48c;
+  --code-number: #d9a55b;
+  --code-comment: #786f65;
+  --code-title: #e6cfa9;
+  --code-attr: #c4b297;
+  --code-type: #c99476;
+  --code-meta: #a89f93;
 }
 
 :root[data-theme='light'] {
@@ -45,4 +55,13 @@
   --acc: #a8442a;
   --sel-bg: #ebe5da;
   --user-bg: #fbf9f4;
+
+  --code-keyword: #a8442a;
+  --code-string: #56703a;
+  --code-number: #93631b;
+  --code-comment: #8a8276;
+  --code-title: #6a4a28;
+  --code-attr: #77593a;
+  --code-type: #8a4c30;
+  --code-meta: #5e574d;
 }

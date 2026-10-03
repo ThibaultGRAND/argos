@@ -32,13 +32,61 @@
     "empty": {
       "title": "Aucune session sélectionnée",
       "body": "Choisissez une session dans la liste pour lire son compte rendu."
-    }
+    },
+    "sessionMarker": "Session {id} / {project}",
+    "roles": {
+      "user": "Utilisateur",
+      "assistant": "Agent"
+    },
+    "truncated": "Message tronqué : seuls les {count} premiers caractères sont affichés.",
+    "toolCalls": "{count} appel | {count} appels",
+    "toolKinds": {
+      "read": "{count} lecture | {count} lectures",
+      "edit": "{count} modification | {count} modifications",
+      "write": "{count} écriture | {count} écritures",
+      "command": "{count} commande | {count} commandes",
+      "search": "{count} recherche | {count} recherches",
+      "web": "{count} accès web | {count} accès web",
+      "subagent": "{count} sous-agent | {count} sous-agents",
+      "other": "{count} autre | {count} autres"
+    },
+    "toolVerbs": {
+      "read": "Lu",
+      "edit": "Modifié",
+      "write": "Écrit",
+      "search": "Recherché",
+      "web": "Consulté",
+      "subagent": "Sous-agent"
+    },
+    "toolError": "erreur",
+    "toolPending": "sans réponse",
+    "expand": "Déplier",
+    "collapse": "Replier",
+    "filesCount": "{count} fichier | {count} fichiers",
+    "loadingMore": "Chargement de la suite…",
+    "loadError": "Impossible de charger cette session.",
+    "toolErrors": "{count} erreur | {count} erreurs",
+    "noEntries": "Cette session ne contient aucun message."
   },
   "panel": {
     "files": "D. Fichiers",
     "snapshots": "E. Snapshots",
     "sheet": "F. Fiche",
-    "empty": "Rien pour l'instant"
+    "empty": "Rien pour l'instant",
+    "total": "total",
+    "noFiles": "Aucun fichier modifié",
+    "snapshotsSoon": "Disponible avec la V1, quand Argos pilotera les sessions.",
+    "sheetFields": {
+      "provider": "Fournisseur",
+      "model": "Modèle",
+      "branch": "Branche",
+      "cliVersion": "Version de la CLI",
+      "startedAt": "Début",
+      "duration": "Durée",
+      "messages": "Messages",
+      "toolCalls": "Appels d'outils",
+      "identifier": "Identifiant"
+    }
   },
   "status": {
     "version": "v{version}",
@@ -63,7 +111,8 @@
   "errors": {
     "unknown": "Une erreur inattendue est survenue.",
     "invalid_input": "La demande envoyée est invalide.",
-    "unknown_request": "Cette action n'existe pas."
+    "unknown_request": "Cette action n'existe pas.",
+    "unsafe_link": "Ce lien ne peut pas être ouvert."
   },
   "providers": {
     "claude": "Claude Code",

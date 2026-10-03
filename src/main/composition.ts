@@ -1,5 +1,8 @@
 import { GetAppInfo } from '../core/application/app/get-app-info'
+import { GetSessionDetail } from '../core/application/history/get-session-detail'
+import { ListSessionEntries } from '../core/application/history/list-session-entries'
 import { ListSessions } from '../core/application/history/list-sessions'
+import { OpenExternalLink } from '../core/application/links/open-external-link'
 import { GetIndexerStatus } from '../core/application/indexer/get-indexer-status'
 import { GetPreferences } from '../core/application/preferences/get-preferences'
 import { UpdatePreferences } from '../core/application/preferences/update-preferences'
@@ -9,6 +12,7 @@ import { openArgosDatabase } from '../infrastructure/database/argos/argos-databa
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { ElectronAppMetadata } from './adapters/electron-app-metadata'
+import { ElectronLinkOpener } from './adapters/electron-link-opener'
 import type { RequestHandlers } from './ipc/register'
 import type { AppPaths } from './paths'
 
@@ -33,6 +37,9 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor): Composition {
   const getIndexerStatus = new GetIndexerStatus(indexer)
   const listProjects = new ListProjects(sessionQueries)
   const listSessions = new ListSessions(sessionQueries)
+  const getSessionDetail = new GetSessionDetail(sessionQueries)
+  const listSessionEntries = new ListSessionEntries(sessionQueries)
+  const openExternalLink = new OpenExternalLink(new ElectronLinkOpener())
 
   const handlers: RequestHandlers = {
     'app.info': () => getAppInfo.execute(),
@@ -41,6 +48,18 @@ export function compose(paths: AppPaths, indexer: IndexerMonitor): Composition {
     'indexer.status': () => getIndexerStatus.execute(),
     'projects.list': () => [...listProjects.execute()],
     'sessions.list': ({ projectId, query }) => [...listSessions.execute(projectId, query)],
+    'sessions.get': ({ sessionId }) => {
+      const detail = getSessionDetail.execute(sessionId)
+      return { ...detail, files: [...detail.files] }
+    },
+    'sessions.entries': ({ sessionId, afterSeq, limit }) => {
+      const page = listSessionEntries.execute(sessionId, afterSeq, limit)
+      return { ...page, entries: [...page.entries] }
+    },
+    'links.open': async ({ url }) => {
+      await openExternalLink.execute(url)
+      return undefined
+    },
   }
 
   return {

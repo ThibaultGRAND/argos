@@ -1,13 +1,25 @@
-import { and, count, desc, eq, max, or, sql, type SQLWrapper } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, max, or, sql, sum, type SQLWrapper } from 'drizzle-orm'
 import { providerIds, type ProviderId } from '../../../core/domain/history/provider'
-import type { ProjectRow, SessionQueries, SessionRow } from '../../../core/domain/ports/session-queries'
+import type {
+  MessageRow,
+  ProjectRow,
+  SessionDetailRow,
+  SessionFileRow,
+  SessionQueries,
+  SessionRow,
+  ToolCallRow,
+} from '../../../core/domain/ports/session-queries'
 import type { IndexDatabase } from './index-database'
-import { projects, sessions } from './schema'
+import { fileChanges, messages, projects, sessions, toolCalls } from './schema'
 
 /** `LIKE` insensible à la casse, avec les caractères spéciaux échappés. */
 const contains = (column: SQLWrapper, pattern: string) => sql`${column} like ${pattern} escape '\\'`
 
 const isProviderId = (value: string): value is ProviderId => providerIds.some((id) => id === value)
+
+const toolStatuses = ['pending', 'success', 'error'] as const
+const asToolStatus = (value: string): ToolCallRow['status'] =>
+  toolStatuses.find((status) => status === value) ?? 'pending'
 
 /** Lecture de l'index pour l'interface, depuis le processus principal (lecture seule). */
 export class SqliteSessionQueries implements SessionQueries {
@@ -66,5 +78,88 @@ export class SqliteSessionQueries implements SessionQueries {
       .limit(limit)
       .all()
       .flatMap((row) => (isProviderId(row.providerId) ? [{ ...row, providerId: row.providerId }] : []))
+  }
+
+  getSession(sessionId: number): SessionDetailRow | undefined {
+    const row = this.database
+      .select({
+        id: sessions.id,
+        providerId: sessions.providerId,
+        externalId: sessions.externalId,
+        customTitle: sessions.customTitle,
+        generatedTitle: sessions.aiTitle,
+        firstPrompt: sessions.firstPrompt,
+        lastExcerpt: sessions.lastExcerpt,
+        model: sessions.model,
+        startedAt: sessions.startedAt,
+        lastActivityAt: sessions.lastActivityAt,
+        messageCount: sessions.messageCount,
+        filesChanged: sessions.filesChanged,
+        linesAdded: sessions.linesAdded,
+        linesRemoved: sessions.linesRemoved,
+        gitBranch: sessions.gitBranch,
+        cliVersion: sessions.cliVersion,
+        toolCallCount: sessions.toolCallCount,
+        projectId: sessions.projectId,
+        projectName: projects.name,
+        projectPath: projects.path,
+      })
+      .from(sessions)
+      .innerJoin(projects, eq(projects.id, sessions.projectId))
+      .where(eq(sessions.id, sessionId))
+      .get()
+    if (row === undefined || !isProviderId(row.providerId)) return undefined
+    return { ...row, providerId: row.providerId }
+  }
+
+  listSessionFiles(sessionId: number): readonly SessionFileRow[] {
+    return this.database
+      .select({
+        path: fileChanges.path,
+        linesAdded: sum(fileChanges.linesAdded).mapWith(Number),
+        linesRemoved: sum(fileChanges.linesRemoved).mapWith(Number),
+        changes: count(fileChanges.id),
+      })
+      .from(fileChanges)
+      .innerJoin(toolCalls, eq(toolCalls.id, fileChanges.toolCallId))
+      .where(eq(toolCalls.sessionId, sessionId))
+      .groupBy(fileChanges.path)
+      .orderBy(asc(fileChanges.path))
+      .all()
+  }
+
+  listEntries(sessionId: number, afterSeq: number, limit: number): readonly (MessageRow | ToolCallRow)[] {
+    const messageRows: MessageRow[] = this.database
+      .select({ seq: messages.seq, role: messages.role, text: messages.text, occurredAt: messages.occurredAt })
+      .from(messages)
+      .where(and(eq(messages.sessionId, sessionId), gt(messages.seq, afterSeq)))
+      .orderBy(asc(messages.seq))
+      .limit(limit)
+      .all()
+      .map((row) => ({ kind: 'message', ...row }))
+
+    const toolRows: ToolCallRow[] = this.database
+      .select({
+        seq: toolCalls.seq,
+        toolName: toolCalls.toolName,
+        toolKind: toolCalls.kind,
+        target: toolCalls.target,
+        summary: toolCalls.summary,
+        status: toolCalls.status,
+        occurredAt: toolCalls.occurredAt,
+        linesAdded: sql<number>`coalesce(sum(${fileChanges.linesAdded}), 0)`,
+        linesRemoved: sql<number>`coalesce(sum(${fileChanges.linesRemoved}), 0)`,
+      })
+      .from(toolCalls)
+      .leftJoin(fileChanges, eq(fileChanges.toolCallId, toolCalls.id))
+      .where(and(eq(toolCalls.sessionId, sessionId), gt(toolCalls.seq, afterSeq)))
+      .groupBy(toolCalls.id)
+      .orderBy(asc(toolCalls.seq))
+      .limit(limit)
+      .all()
+      .map((row) => ({ kind: 'tool', ...row, status: asToolStatus(row.status) }))
+
+    // Les deux listes sont triées : leur fusion contient les `limit` premières entrées de la session.
+    return [...messageRows, ...toolRows].sort((a, b) => a.seq - b.seq).slice(0, limit)
   }
 }

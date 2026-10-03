@@ -37,3 +37,34 @@ export function shortenPath(path: string, maxLength = 40): string {
   const withHome = home === undefined ? path : `~${path.slice(home.length)}`
   return withHome.length <= maxLength ? withHome : `…${withHome.slice(withHome.length - maxLength + 1)}`
 }
+
+/** Heure seule, « 14:02 ». */
+export function formatTime(iso: string, locale: string): string {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime())
+    ? ''
+    : new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(date)
+}
+
+/** Date et heure complètes, pour la fiche d'une session. */
+export function formatDateTime(iso: string, locale: string): string {
+  const date = new Date(iso)
+  return Number.isNaN(date.getTime())
+    ? ''
+    : new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+}
+
+/** Durée entre deux dates : « < 1 min », « 18 min », « 1 h 05 ». */
+export function formatDuration(fromIso: string, toIso: string): string {
+  const minutes = Math.floor((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60_000)
+  if (!Number.isFinite(minutes) || minutes < 1) return '< 1 min'
+  if (minutes < 60) return `${minutes} min`
+  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`
+}
+
+/** Chemin relatif au projet quand le fichier est dans le projet, sinon le chemin raccourci. */
+export function relativeToProject(path: string, projectPath: string): string {
+  const separator = projectPath.includes('\\') ? '\\' : '/'
+  const prefix = projectPath.endsWith(separator) ? projectPath : `${projectPath}${separator}`
+  return path.startsWith(prefix) ? path.slice(prefix.length) : shortenPath(path, 60)
+}

@@ -1,7 +1,15 @@
 import { z } from 'zod'
 import { AppInfoSchema } from './app'
 import type { RequestName } from './channels'
-import { ListSessionsInputSchema, ProjectSummarySchema, SessionSummarySchema } from './history'
+import {
+  ListEntriesInputSchema,
+  ListSessionsInputSchema,
+  ProjectSummarySchema,
+  SessionDetailSchema,
+  SessionIdInputSchema,
+  SessionSummarySchema,
+  TimelinePageSchema,
+} from './history'
 import { IndexerStatusSchema } from './indexer'
 import { PreferencesSchema, PreferencesUpdateSchema } from './preferences'
 
@@ -21,6 +29,9 @@ export const requests = {
   'indexer.status': { input: z.undefined(), output: IndexerStatusSchema },
   'projects.list': { input: z.undefined(), output: z.array(ProjectSummarySchema) },
   'sessions.list': { input: ListSessionsInputSchema, output: z.array(SessionSummarySchema) },
+  'sessions.get': { input: SessionIdInputSchema, output: SessionDetailSchema },
+  'sessions.entries': { input: ListEntriesInputSchema, output: TimelinePageSchema },
+  'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>
 
 export type Requests = typeof requests

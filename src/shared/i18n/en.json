@@ -32,13 +32,61 @@
     "empty": {
       "title": "No session selected",
       "body": "Pick a session from the list to read its report."
-    }
+    },
+    "sessionMarker": "Session {id} / {project}",
+    "roles": {
+      "user": "User",
+      "assistant": "Agent"
+    },
+    "truncated": "Message truncated: only the first {count} characters are shown.",
+    "toolCalls": "{count} call | {count} calls",
+    "toolKinds": {
+      "read": "{count} read | {count} reads",
+      "edit": "{count} edit | {count} edits",
+      "write": "{count} write | {count} writes",
+      "command": "{count} command | {count} commands",
+      "search": "{count} search | {count} searches",
+      "web": "{count} web access | {count} web accesses",
+      "subagent": "{count} subagent | {count} subagents",
+      "other": "{count} other | {count} others"
+    },
+    "toolVerbs": {
+      "read": "Read",
+      "edit": "Edited",
+      "write": "Wrote",
+      "search": "Searched",
+      "web": "Fetched",
+      "subagent": "Subagent"
+    },
+    "toolError": "error",
+    "toolPending": "no response",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "filesCount": "{count} file | {count} files",
+    "loadingMore": "Loading more…",
+    "loadError": "Could not load this session.",
+    "toolErrors": "{count} error | {count} errors",
+    "noEntries": "This session has no messages."
   },
   "panel": {
     "files": "D. Files",
     "snapshots": "E. Snapshots",
     "sheet": "F. Sheet",
-    "empty": "Nothing yet"
+    "empty": "Nothing yet",
+    "total": "total",
+    "noFiles": "No files changed",
+    "snapshotsSoon": "Available with V1, once Argos runs sessions.",
+    "sheetFields": {
+      "provider": "Provider",
+      "model": "Model",
+      "branch": "Branch",
+      "cliVersion": "CLI version",
+      "startedAt": "Started",
+      "duration": "Duration",
+      "messages": "Messages",
+      "toolCalls": "Tool calls",
+      "identifier": "Identifier"
+    }
   },
   "status": {
     "version": "v{version}",
@@ -63,7 +111,8 @@
   "errors": {
     "unknown": "An unexpected error occurred.",
     "invalid_input": "The request is invalid.",
-    "unknown_request": "This action does not exist."
+    "unknown_request": "This action does not exist.",
+    "unsafe_link": "This link cannot be opened."
   },
   "providers": {
     "claude": "Claude Code",

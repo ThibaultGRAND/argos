@@ -1,4 +1,12 @@
-import type { ProjectRow, SessionQueries, SessionRow } from '../../../core/domain/ports/session-queries'
+import type {
+  MessageRow,
+  ProjectRow,
+  SessionDetailRow,
+  SessionFileRow,
+  SessionQueries,
+  SessionRow,
+  ToolCallRow,
+} from '../../../core/domain/ports/session-queries'
 import { openIndexDatabaseReadOnly, type IndexDatabaseHandle } from './index-database'
 import { SqliteSessionQueries } from './session-queries-repository'
 
@@ -18,6 +26,18 @@ export class ReadOnlySessionQueries implements SessionQueries {
 
   listSessions(projectId: number, query: string | undefined, limit: number): readonly SessionRow[] {
     return this.open()?.listSessions(projectId, query, limit) ?? []
+  }
+
+  getSession(sessionId: number): SessionDetailRow | undefined {
+    return this.open()?.getSession(sessionId)
+  }
+
+  listSessionFiles(sessionId: number): readonly SessionFileRow[] {
+    return this.open()?.listSessionFiles(sessionId) ?? []
+  }
+
+  listEntries(sessionId: number, afterSeq: number, limit: number): readonly (MessageRow | ToolCallRow)[] {
+    return this.open()?.listEntries(sessionId, afterSeq, limit) ?? []
   }
 
   close(): void {

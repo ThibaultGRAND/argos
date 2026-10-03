@@ -2,7 +2,9 @@ import { appendFileSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmS
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { GetSessionDetail } from '../../../core/application/history/get-session-detail'
 import { ImportHistory } from '../../../core/application/history/import-history'
+import { ListSessionEntries } from '../../../core/application/history/list-session-entries'
 import { ListSessions } from '../../../core/application/history/list-sessions'
 import { ClaudeHistorySource } from '../../providers/claude/claude-history-source'
 import { SqliteHistoryIndex } from './history-index-repository'
@@ -101,5 +103,46 @@ describe('import de l’historique Claude dans index.db', () => {
     expect(new ListSessions(queries()).execute(project?.id ?? -1, 'COURS')).toHaveLength(1)
     expect(new ListSessions(queries()).execute(project?.id ?? -1, 'introuvable')).toHaveLength(0)
     expect(new ListSessions(queries()).execute(project?.id ?? -1, '100%')).toHaveLength(0)
+  })
+
+  it('donne la fiche, les fichiers et les entrées dans l’ordre réel de la session', async () => {
+    await importer().execute()
+    const [project] = queries().listProjects()
+    const [session] = new ListSessions(queries()).execute(project?.id ?? -1)
+    const id = session?.id ?? -1
+
+    const detail = new GetSessionDetail(queries()).execute(id)
+    expect(detail).toMatchObject({
+      projectName: 'site-esf',
+      gitBranch: 'main',
+      cliVersion: '2.1.284',
+      toolCallCount: 4,
+    })
+    expect(detail.files).toEqual([
+      { path: '/projets/site-esf/src/lib/slugs.test.ts', linesAdded: 2, linesRemoved: 0, changes: 1 },
+      { path: '/projets/site-esf/src/lib/slugs.ts', linesAdded: 2, linesRemoved: 1, changes: 1 },
+    ])
+
+    const page = new ListSessionEntries(queries()).execute(id)
+    expect(page.nextSeq).toBeNull()
+    expect(page.entries.map((entry) => (entry.kind === 'message' ? entry.role : entry.toolName))).toEqual([
+      'user',
+      'Read',
+      'Edit',
+      'Bash',
+      'Write',
+      'assistant',
+      'user',
+    ])
+    expect(page.entries.find((entry) => entry.kind === 'tool' && entry.toolName === 'Edit')).toMatchObject({
+      linesAdded: 2,
+      linesRemoved: 1,
+      status: 'success',
+    })
+
+    const firstPage = new ListSessionEntries(queries()).execute(id, -1, 3)
+    expect(firstPage.entries).toHaveLength(3)
+    const secondPage = new ListSessionEntries(queries()).execute(id, firstPage.nextSeq ?? -1, 3)
+    expect(secondPage.entries[0]?.seq).toBe((firstPage.nextSeq ?? -1) + 1)
   })
 })

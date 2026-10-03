@@ -209,6 +209,8 @@ Claude / Codex / Gemini : ce qui diffère, ce qui manque, le comportement dégra
 - **Interface : Vue 3 + Vite.** Composants en `<script setup lang="ts">`, état partagé dans des stores Pinia,
   aucune logique métier dans les composants ni dans les stores (ils appellent les cas d'usage).
 - **Navigation : Vue Router** (mode hash).
+- **Markdown : markdown-it** (HTML brut et images désactivés) pour les réponses des agents,
+  **coloration syntaxique : highlight.js** (langages courants, couleurs issues des tokens C1).
 - **Validation : Zod** pour le contrat IPC (entrées et événements), types TypeScript déduits des schémas.
 - **Build et packaging : electron-vite + electron-builder.**
 - **Base de données : SQLite (better-sqlite3) + Drizzle ORM** (règles en §5.2).

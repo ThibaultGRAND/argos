@@ -35,3 +35,63 @@ export const ListSessionsInputSchema = z.object({
 
 export const IndexUpdatedSchema = z.object({ sessionsChanged: z.number().int() })
 export type IndexUpdatedDto = z.infer<typeof IndexUpdatedSchema>
+
+export const SessionFileSchema = z.object({
+  path: z.string(),
+  linesAdded: z.number().int(),
+  linesRemoved: z.number().int(),
+  changes: z.number().int(),
+})
+export type SessionFileDto = z.infer<typeof SessionFileSchema>
+
+export const SessionDetailSchema = SessionSummarySchema.extend({
+  projectId: z.number().int(),
+  projectName: z.string(),
+  projectPath: z.string(),
+  gitBranch: z.string().nullable(),
+  cliVersion: z.string().nullable(),
+  toolCallCount: z.number().int(),
+  files: z.array(SessionFileSchema),
+})
+export type SessionDetailDto = z.infer<typeof SessionDetailSchema>
+
+export const MessageEntrySchema = z.object({
+  kind: z.literal('message'),
+  seq: z.number().int(),
+  role: z.enum(['user', 'assistant']),
+  text: z.string(),
+  truncated: z.boolean(),
+  occurredAt: z.string(),
+})
+
+export const ToolEntrySchema = z.object({
+  kind: z.literal('tool'),
+  seq: z.number().int(),
+  toolName: z.string(),
+  toolKind: z.string(),
+  target: z.string().nullable(),
+  summary: z.string().nullable(),
+  status: z.enum(['pending', 'success', 'error']),
+  linesAdded: z.number().int(),
+  linesRemoved: z.number().int(),
+  occurredAt: z.string(),
+})
+
+export const TimelineEntrySchema = z.discriminatedUnion('kind', [MessageEntrySchema, ToolEntrySchema])
+export type TimelineEntryDto = z.infer<typeof TimelineEntrySchema>
+export type MessageEntryDto = z.infer<typeof MessageEntrySchema>
+export type ToolEntryDto = z.infer<typeof ToolEntrySchema>
+
+export const TimelinePageSchema = z.object({
+  entries: z.array(TimelineEntrySchema),
+  nextSeq: z.number().int().nullable(),
+})
+export type TimelinePageDto = z.infer<typeof TimelinePageSchema>
+
+export const SessionIdInputSchema = z.object({ sessionId: z.number().int() })
+
+export const ListEntriesInputSchema = z.object({
+  sessionId: z.number().int(),
+  afterSeq: z.number().int().optional(),
+  limit: z.number().int().min(1).max(500).optional(),
+})

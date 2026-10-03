@@ -9,6 +9,9 @@ export const requestNames = [
   'indexer.status',
   'projects.list',
   'sessions.list',
+  'sessions.get',
+  'sessions.entries',
+  'links.open',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 

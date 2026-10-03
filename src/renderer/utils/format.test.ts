@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatModel, formatWhen, shortenPath } from './format'
+import { formatDuration, formatModel, formatWhen, relativeToProject, shortenPath } from './format'
 
 describe('formatModel', () => {
   it('rend les modèles Claude lisibles', () => {
@@ -28,5 +28,21 @@ describe('shortenPath', () => {
     const short = shortenPath('/opt/un/chemin/vraiment/très/long/pour/tenir', 20)
     expect(short).toHaveLength(20)
     expect(short).toMatch(/^….*\/pour\/tenir$/)
+  })
+})
+
+describe('formatDuration', () => {
+  it('affiche des minutes puis des heures', () => {
+    expect(formatDuration('2026-10-01T10:00:00Z', '2026-10-01T10:00:30Z')).toBe('< 1 min')
+    expect(formatDuration('2026-10-01T10:00:00Z', '2026-10-01T10:18:00Z')).toBe('18 min')
+    expect(formatDuration('2026-10-01T10:00:00Z', '2026-10-01T11:05:00Z')).toBe('1 h 05')
+  })
+})
+
+describe('relativeToProject', () => {
+  it('rend le chemin relatif au projet', () => {
+    expect(relativeToProject('/p/site/src/a.ts', '/p/site')).toBe('src/a.ts')
+    expect(relativeToProject('C:\\p\\site\\a.ts', 'C:\\p\\site')).toBe('a.ts')
+    expect(relativeToProject('/ailleurs/b.ts', '/p/site')).toBe('/ailleurs/b.ts')
   })
 })

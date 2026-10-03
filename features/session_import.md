@@ -1,6 +1,6 @@
 # F01 — Import des sessions
 
-**Statut** : à tester
+**Statut** : terminé
 **Version cible** : V0
 **Dépend de** : [socle_projet.md](socle_projet.md), PLAN.md §2.2 (ports), §2.3 (flux A), §2.4 (index.db)
 **Écrans** : barre latérale de la maquette 2a (sélecteur de projet, liste des sessions), barre d'état (progression de l'import)

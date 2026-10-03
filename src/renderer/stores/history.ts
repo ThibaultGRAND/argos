@@ -61,6 +61,14 @@ export const useHistoryStore = defineStore('history', () => {
     selectedSessionId.value = sessionId
   }
 
+  /** Session ouverte depuis un autre projet (lien, recherche) : affiche ce projet dans la barre latérale. */
+  async function revealProject(projectId: number): Promise<void> {
+    if (selectedProjectId.value === projectId) return
+    selectedProjectId.value = projectId
+    query.value = ''
+    await loadSessions()
+  }
+
   async function setQuery(value: string): Promise<void> {
     query.value = value
     await loadSessions()
@@ -82,6 +90,7 @@ export const useHistoryStore = defineStore('history', () => {
     loadProjects,
     selectProject,
     selectSession,
+    revealProject,
     setQuery,
     watchIndex,
   }
