@@ -23,8 +23,8 @@ import {
   RunIdOutputSchema,
   RunSummarySchema,
 } from './live'
-import { SnapshotListSchema, SnapshotSchema } from './snapshots'
-import { NewReviewCommentSchema, ReviewCommentSchema, ReviewDiffSchema } from './review'
+import { RestoreInputSchema, SessionChangesSchema } from './snapshots'
+import { NewReviewCommentSchema, ReviewCommentSchema, ReviewDiffSchema, ReviewRangeSchema } from './review'
 import { ContextDetailOutputSchema, ContextGaugeInputSchema, ContextGaugeSchema, QuotaOutputSchema } from './usage'
 
 interface RequestDefinition {
@@ -59,12 +59,13 @@ export const requests = {
     input: z.object({ externalId: z.string() }),
     output: z.object({ sessionId: z.number().int().nullable() }),
   },
-  'snapshots.list': { input: z.object({ sessionExternalId: z.string() }), output: SnapshotListSchema },
-  'snapshots.restore': { input: z.object({ snapshotId: z.string() }), output: SnapshotSchema },
+  'snapshots.changes': { input: z.object({ sessionExternalId: z.string() }), output: SessionChangesSchema },
+  'snapshots.restore': { input: RestoreInputSchema, output: z.undefined() },
   'review.diff': {
-    input: z.object({ sessionExternalId: z.string(), fromId: z.string().optional(), toId: z.string().optional() }),
+    input: z.object({ sessionExternalId: z.string(), range: ReviewRangeSchema.optional() }),
     output: ReviewDiffSchema,
   },
+  'review.markReviewed': { input: z.object({ snapshotId: z.string() }), output: z.undefined() },
   'review.comments.list': { input: z.object({ sessionExternalId: z.string() }), output: z.array(ReviewCommentSchema) },
   'review.comments.add': { input: NewReviewCommentSchema, output: ReviewCommentSchema },
   'review.comments.delete': { input: z.object({ id: z.string() }), output: z.undefined() },

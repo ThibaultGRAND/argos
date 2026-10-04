@@ -1,15 +1,18 @@
 # F06 — Snapshots d'agent et retour en arrière
 
-**Statut** : à tester
+**Statut** : à tester (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
 **Version cible** : V1
 **Dépend de** : [agent_sessions.md](agent_sessions.md), PLAN.md §2.4 (git fantôme)
 **Écrans** : panneau **E. Snapshots** et repères « SNAPSHOT S1 · ↺ revenir » dans le document (maquette 2a)
+
+## Refonte du 2026-10-04
+Le comportement visible est remplacé par [agent_changes.md](agent_changes.md) ; ce fichier garde la conception d'origine.
 
 ## Problème
 Un agent peut modifier des dizaines de fichiers en un tour. Sans moyen fiable de revenir en arrière, on hésite à le laisser
 travailler, ou on découvre trop tard une modification non voulue. Promesse d'Argos : « je peux tout annuler ».
 
-## Comportement attendu
+## Comportement attendu (première version)
 - Pour chaque session pilotée par Argos :
   - **S0** au démarrage (état du projet avant que l'agent n'agisse) ;
   - **S1, S2…** à chaque fin de tour.

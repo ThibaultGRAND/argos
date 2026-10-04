@@ -7,7 +7,7 @@ import type { ModelChoiceDto } from '@shared/contract'
 import { argos, unwrap } from '../../services/argos'
 import { useAppStatusStore } from '../../stores/app-status'
 import { useHistoryStore } from '../../stores/history'
-import { useLiveStore } from '../../stores/live'
+import { ACTIVE_STATUSES, useLiveStore } from '../../stores/live'
 import { useNoticesStore } from '../../stores/notices'
 import UiEmptyState from '../../ui/UiEmptyState.vue'
 import UiMarker from '../../ui/UiMarker.vue'
@@ -32,6 +32,15 @@ const macos = computed(() => useAppStatusStore().info?.platform === 'darwin')
 const runId = ref<string | undefined>()
 const run = computed(() => (runId.value === undefined ? undefined : live.byRunId(runId.value)))
 const blocks = computed(() => (run.value === undefined ? [] : groupTimeline(live.entriesOf(run.value))))
+
+/** Une autre session travaille déjà dans ce projet : leurs modifications se mélangeraient (features/agent_changes.md). */
+const otherActive = computed(
+  () =>
+    run.value === undefined &&
+    live.runs.some(
+      (other) => other.projectPath === selectedProject.value?.path && ACTIVE_STATUSES.includes(other.status),
+    ),
+)
 
 async function submit(text: string, model: ModelChoiceDto | undefined): Promise<void> {
   const project = selectedProject.value
@@ -102,6 +111,7 @@ watch(selectedProject, () => {
         />
       </div>
       <div class="new__composer">
+        <p v-if="otherActive" class="new__warning">{{ t('snapshots.twoSessions') }}</p>
         <LiveComposer :macos="macos" @submit="submit" />
       </div>
     </template>
@@ -134,6 +144,13 @@ watch(selectedProject, () => {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--tx3);
+}
+
+.new__warning {
+  margin: 0 0 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--caution);
 }
 
 .new__note {

@@ -38,8 +38,17 @@ import { ElectronLinkOpener } from './adapters/electron-link-opener'
 import { ElectronAppPresence, ElectronNotifier } from './adapters/electron-notifier'
 import { IntlifyTranslator } from './adapters/intlify-translator'
 import type { RequestHandlers } from './ipc/register'
-import type { Snapshot } from '../core/domain/snapshots/snapshot'
-import type { ContextBreakdownDto, PlanQuotaDto, ReviewCommentDto, SnapshotDto } from '../shared/contract'
+import type { TurnChange } from '../core/domain/snapshots/snapshot'
+import type {
+  ChangedFileDto,
+  ContextBreakdownDto,
+  FileDiffDto,
+  PlanQuotaDto,
+  ReviewCommentDto,
+  TurnChangeDto,
+} from '../shared/contract'
+import type { FileDiff } from '../core/domain/review/diff'
+import { ChangeAttribution } from '../core/application/snapshots/change-attribution'
 import { levelOf, type ContextBreakdown, type PlanQuota } from '../core/domain/usage/usage'
 import type { ReviewComment } from '../core/domain/review/review-comment'
 import type { AppPaths } from './paths'
@@ -122,9 +131,11 @@ export function compose({
   })
   const shadow = new GitShadowRepository({ root: paths.shadowGit, environment })
   const snapshotRepository = new SqliteSnapshotRepository(argosDb.database)
+  const attribution = new ChangeAttribution(shadow)
   const snapshotService = new SnapshotService({
     shadow,
     repository: snapshotRepository,
+    attribution,
     activeProjects: () => liveSessions.activeProjects(),
     newId: randomUUID,
     now: () => new Date(),
@@ -146,7 +157,7 @@ export function compose({
           indexer.requestImport()
         }
       },
-      // Fin d'un tour : snapshot des fichiers (F06), puis import de l'historique écrit par la CLI (PLAN.md §2.3, flux D).
+      // Fin d'un tour : capture des fichiers (features/agent_changes.md), puis import de l'historique écrit par la CLI (PLAN.md §2.3, flux D).
       onTurnCompleted: (runId) => {
         void snapshotService.afterTurn(runId)
         indexer.requestImport()
@@ -191,6 +202,7 @@ export function compose({
   const liveCommands = new LiveCommands(liveSessions, sessionQueries, snapshotService)
   const reviewService = new ReviewService({
     shadow,
+    attribution,
     snapshots: snapshotRepository,
     comments: new SqliteReviewCommentRepository(argosDb.database),
     preferences: preferencesRepository,
@@ -240,20 +252,29 @@ export function compose({
     'live.continue': async ({ sessionId, text, model }) => ({
       runId: await liveCommands.continueSession(sessionId, text, model),
     }),
-    'snapshots.list': async ({ sessionExternalId }) => {
-      const list = await snapshotService.list(sessionExternalId)
-      return { available: list.available, snapshots: list.snapshots.map(toSnapshotDto) }
-    },
-    'review.diff': async ({ sessionExternalId, fromId, toId }) => {
-      const diff = await reviewService.diff(sessionExternalId, fromId, toId)
+    'snapshots.changes': async ({ sessionExternalId }) => {
+      const changes = await snapshotService.changes(sessionExternalId)
       return {
-        snapshots: diff.snapshots.map(toSnapshotDto),
+        available: changes.available,
+        tracked: changes.tracked,
+        startId: changes.start?.id ?? null,
+        agentFiles: changes.agentFiles.map(({ file, alsoOutside }) => toChangedFile(file, alsoOutside)),
+        otherFiles: changes.otherFiles.map((file) => toChangedFile(file, false)),
+        truncated: changes.truncated,
+        turns: changes.turns.map(toTurnDto),
+        undoableId: changes.undoable?.id ?? null,
+      }
+    },
+    'review.diff': async ({ sessionExternalId, range }) => {
+      const diff = await reviewService.diff(sessionExternalId, range)
+      return {
+        range: diff.range,
+        turns: diff.turns.map(toTurnDto),
+        sinceReviewAvailable: diff.sinceReviewAvailable,
         fromId: diff.from?.id ?? null,
         toId: diff.to?.id ?? null,
-        files: diff.files.map((file) => ({
-          ...file,
-          hunks: file.hunks.map((hunk) => ({ ...hunk, lines: [...hunk.lines] })),
-        })),
+        files: diff.files.map(({ file, alsoOutside }) => toFileDiffDto(file, alsoOutside)),
+        otherFiles: diff.otherFiles.map((file) => toFileDiffDto(file, false)),
         truncated: diff.truncated,
       }
     },
@@ -264,9 +285,17 @@ export function compose({
       return undefined
     },
     'review.send': ({ sessionId, sessionExternalId }) => reviewService.send(sessionId, sessionExternalId),
-    'snapshots.restore': async ({ snapshotId }) => toSnapshotDto(await snapshotService.restore(snapshotId)),
-    'live.send': ({ runId, text }) => {
-      liveSessions.send(runId, text)
+    'snapshots.restore': async (action) => {
+      await snapshotService.restore(action)
+      return undefined
+    },
+    'review.markReviewed': ({ snapshotId }) => {
+      reviewService.markReviewed(snapshotId)
+      onSnapshotsChanged(snapshotRepository.get(snapshotId)?.sessionExternalId ?? '')
+      return undefined
+    },
+    'live.send': async ({ runId, text }) => {
+      await liveCommands.send(runId, text)
       return undefined
     },
     'live.interrupt': async ({ runId }) => {
@@ -319,19 +348,25 @@ function withoutUndefined<T extends object>(value: T): { [K in keyof T]?: Exclud
   }
 }
 
-/** Le commit parent et le fournisseur restent internes au processus principal. */
-function toSnapshotDto(snapshot: Snapshot): SnapshotDto {
+function toChangedFile(file: FileDiff, alsoOutside: boolean): ChangedFileDto {
+  const { path, oldPath, status, binary, additions, deletions } = file
+  return { path, oldPath, status, binary, additions, deletions, alsoOutside }
+}
+
+function toFileDiffDto(file: FileDiff, alsoOutside: boolean): FileDiffDto {
+  return { ...file, alsoOutside, hunks: file.hunks.map((hunk) => ({ ...hunk, lines: [...hunk.lines] })) }
+}
+
+/** Un tour, désigné par sa capture : les commits restent internes au processus principal. */
+function toTurnDto({ snapshot, before }: TurnChange): TurnChangeDto {
   return {
-    id: snapshot.id,
-    projectPath: snapshot.projectPath,
-    sessionExternalId: snapshot.sessionExternalId,
-    ordinal: snapshot.ordinal,
-    kind: snapshot.kind,
-    commitHash: snapshot.commitHash,
+    snapshotId: snapshot.id,
+    beforeSnapshotId: before.id,
+    label: snapshot.label,
+    createdAt: snapshot.createdAt,
     filesChanged: snapshot.filesChanged,
     linesAdded: snapshot.linesAdded,
     linesRemoved: snapshot.linesRemoved,
-    createdAt: snapshot.createdAt,
   }
 }
 

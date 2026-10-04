@@ -104,6 +104,58 @@ describe('GitShadowRepository', () => {
     ])
   })
 
+  it('compare l’état actuel du disque à une capture, fichiers nouveaux et supprimés compris', async () => {
+    write('a.ts', 'un\n')
+    write('c.ts', 'c\n')
+    const start = await repository.snapshot(project, 'S0')
+    write('a.ts', 'un\ndeux\n')
+    write('b.ts', 'nouveau\n')
+    rmSync(join(project, 'c.ts'))
+    const { files } = await repository.changesSince(project, start.commitHash)
+    expect(files.map((file) => [file.path, file.status, file.additions, file.deletions])).toEqual([
+      ['a.ts', 'modified', 1, 0],
+      ['b.ts', 'added', 1, 0],
+      ['c.ts', 'deleted', 0, 1],
+    ])
+    // Rien n'est capturé : seul l'index du dépôt fantôme a bougé.
+    await repository.restore(project, start.commitHash)
+    expect([read('a.ts'), existsSync(join(project, 'b.ts')), read('c.ts')]).toEqual(['un\n', false, 'c\n'])
+  })
+
+  it('remet un seul fichier dans l’état d’une capture, ou le supprime s’il n’y existait pas', async () => {
+    write('a.ts', 'un\n')
+    write('b.ts', 'b\n')
+    const start = await repository.snapshot(project, 'S0')
+    write('a.ts', 'deux\n')
+    write('b.ts', 'B\n')
+    write('dossier/c.ts', 'nouveau\n')
+    await repository.restoreFiles(project, start.commitHash, ['a.ts', 'dossier/c.ts'])
+    expect([read('a.ts'), read('b.ts'), existsSync(join(project, 'dossier/c.ts'))]).toEqual(['un\n', 'B\n', false])
+  })
+
+  it('liste les chemins modifiés entre deux captures, renommages compris', async () => {
+    write('a.ts', 'contenu assez long pour être reconnu comme renommé\n'.repeat(5))
+    write('b.ts', 'b\n')
+    const first = await repository.snapshot(project, 'S0')
+    rmSync(join(project, 'a.ts'))
+    write('renomme.ts', 'contenu assez long pour être reconnu comme renommé\n'.repeat(5))
+    write('b.ts', 'B\n')
+    write('espace et accent é.ts', 'x\n')
+    const second = await repository.snapshot(project, 'S1')
+    expect([...(await repository.changedPaths(project, first.commitHash, second.commitHash))].sort()).toEqual(
+      ['a.ts', 'b.ts', 'espace et accent é.ts', 'renomme.ts'].sort(),
+    )
+  })
+
+  it('compte les modifications par rapport au commit demandé', async () => {
+    write('a.ts', 'un\n')
+    const first = await repository.snapshot(project, 'S0')
+    write('a.ts', 'deux\n')
+    await repository.snapshot(project, 'autre session')
+    const third = await repository.snapshot(project, 'S1', first.commitHash)
+    expect(third.stats.filesChanged).toBe(1)
+  })
+
   it('signale un dossier de projet introuvable', async () => {
     await expect(repository.snapshot(join(root, 'absent'), 'S0')).rejects.toMatchObject({ code: 'project_missing' })
   })

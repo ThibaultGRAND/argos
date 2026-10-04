@@ -6,13 +6,18 @@ import { openInEditor } from '../services/editor'
 import { useNoticesStore } from '../stores/notices'
 import { usePreferencesStore } from '../stores/preferences'
 import { useSessionStore } from '../stores/session'
-import SnapshotList from '../features/snapshots/SnapshotList.vue'
+import ChangesPanel from '../features/snapshots/ChangesPanel.vue'
+import { useSnapshotsStore } from '../stores/snapshots'
 import UiMarker from '../ui/UiMarker.vue'
 import { useContextText } from '../features/usage/context-text'
 import { formatDateTime, formatDuration, formatModel, formatTokens, relativeToProject } from '../utils/format'
 
-/** Colonne de droite 2a : D. Fichiers, E. Snapshots (V1), F. Fiche de la session ouverte. */
+/**
+ * Colonne de droite 2a : D. Modifications (session pilotée par Argos) ou D. Fichiers (d'après l'historique),
+ * E. Fiche de la session ouverte (features/agent_changes.md).
+ */
 const { detail } = storeToRefs(useSessionStore())
+const { changes } = storeToRefs(useSnapshotsStore())
 const { t, locale } = useI18n()
 const notices = useNoticesStore()
 const { preferences } = storeToRefs(usePreferencesStore())
@@ -56,9 +61,14 @@ const sheet = computed(() => {
 
 <template>
   <aside class="panels">
-    <section class="panels__section">
+    <section v-if="detail && changes?.tracked" class="panels__section">
+      <UiMarker :label="t('panel.changes')" />
+      <ChangesPanel :changes="changes" :project-path="detail.projectPath" :session-external-id="detail.externalId" />
+    </section>
+    <section v-else class="panels__section">
       <UiMarker :label="t('panel.files')" />
       <template v-if="detail">
+        <p v-if="detail.files.length > 0" class="panels__hint">{{ t('snapshots.fromHistory') }}</p>
         <ul v-if="detail.files.length > 0" class="panels__files">
           <li v-for="file in detail.files" :key="file.path">
             <button
@@ -78,12 +88,6 @@ const sheet = computed(() => {
         </ul>
         <p v-else class="panels__empty">{{ t('panel.noFiles') }}</p>
       </template>
-      <p v-else class="panels__empty">{{ t('panel.empty') }}</p>
-    </section>
-
-    <section class="panels__section">
-      <UiMarker :label="t('panel.snapshots')" />
-      <SnapshotList v-if="detail" />
       <p v-else class="panels__empty">{{ t('panel.empty') }}</p>
     </section>
 
@@ -111,6 +115,13 @@ const sheet = computed(() => {
 .panels__section {
   padding: 16px;
   border-bottom: 1px solid var(--rule);
+}
+
+.panels__hint {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tx3);
 }
 
 .panels__empty {

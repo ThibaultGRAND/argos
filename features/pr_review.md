@@ -1,11 +1,14 @@
 # F07 — Review façon PR
 
-**Statut** : à tester
+**Statut** : à tester (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
 **Version cible** : V1
 **Dépend de** : [agent_snapshots.md](agent_snapshots.md) (les diffs viennent des snapshots), [agent_sessions.md](agent_sessions.md) (renvoi à l'agent),
 [open_in_editor.md](open_in_editor.md) (ouvrir à la ligne)
 **Écrans** : onglet **« Review »** à côté du compte rendu (maquette globale, écran 5 : « un onglet Review à côté de Conversation »).
 Nouvel écran décrit ci-dessous, dans le style du document C1.
+
+## Refonte du 2026-10-04
+Le comportement visible est remplacé par [agent_changes.md](agent_changes.md) ; ce fichier garde la conception d'origine.
 
 ## Problème
 Relire ce que l'agent a modifié demande aujourd'hui `git diff` dans un terminal, sans lien avec la conversation,

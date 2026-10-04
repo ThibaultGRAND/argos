@@ -7,7 +7,7 @@ import { snapshots } from './schema'
 
 type Row = typeof snapshots.$inferSelect
 
-const kinds: readonly SnapshotKind[] = ['baseline', 'turn', 'before_restore']
+const kinds: readonly SnapshotKind[] = ['baseline', 'prompt', 'turn', 'before_restore']
 
 function toSnapshot(row: Row): Snapshot | undefined {
   const providerId = providerIds.find((id) => id === row.providerId)
@@ -25,6 +25,8 @@ function toSnapshot(row: Row): Snapshot | undefined {
     filesChanged: row.filesChanged,
     linesAdded: row.linesAdded,
     linesRemoved: row.linesRemoved,
+    label: row.label,
+    reviewedAt: row.reviewedAt,
     createdAt: row.createdAt,
   }
 }
@@ -47,6 +49,10 @@ export class SqliteSnapshotRepository implements SnapshotRepository {
       .orderBy(asc(snapshots.ordinal))
       .all()
       .flatMap((row) => toSnapshot(row) ?? [])
+  }
+
+  markReviewed(id: string, at: string): void {
+    this.database.update(snapshots).set({ reviewedAt: at, updatedAt: at }).where(eq(snapshots.id, id)).run()
   }
 
   get(id: string): Snapshot | undefined {

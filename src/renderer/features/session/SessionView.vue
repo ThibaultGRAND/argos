@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import type { ModelChoiceDto } from '@shared/contract'
+import type { ModelChoiceDto, TurnChangeDto } from '@shared/contract'
 import LiveComposer from '../live/LiveComposer.vue'
 import PermissionCard from '../live/PermissionCard.vue'
 import { useAppStatusStore } from '../../stores/app-status'
@@ -12,6 +12,8 @@ import { useSessionStore } from '../../stores/session'
 import { useSnapshotsStore } from '../../stores/snapshots'
 import { useReviewStore } from '../../stores/review'
 import ReviewView from '../review/ReviewView.vue'
+import RestoreDialog from '../snapshots/RestoreDialog.vue'
+import TurnChangeLine from '../snapshots/TurnChangeLine.vue'
 import UiEmptyState from '../../ui/UiEmptyState.vue'
 import { groupTimeline } from '../../utils/timeline'
 import SessionHeader from './SessionHeader.vue'
@@ -31,8 +33,8 @@ const notices = useNoticesStore()
 const appStatus = useAppStatusStore()
 const snapshotsStore = useSnapshotsStore()
 const reviewStore = useReviewStore()
-const tab = ref<'report' | 'review'>('report')
 const { detail, entries, hasMore, loading, error } = storeToRefs(session)
+const { tab } = storeToRefs(reviewStore)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
 const run = computed(() => live.runForSession(detail.value?.externalId))
@@ -75,21 +77,19 @@ watch(detail, (loaded) => {
   if (loaded !== undefined) void history.revealProject(loaded.projectId)
 })
 
-/** Repère « SNAPSHOT Sn » placé après le dernier bloc antérieur au snapshot (fin du tour). */
-const markersAfter = computed(() => {
-  const placed = new Map<number, string[]>()
+/** Ligne d'un tour qui a modifié des fichiers, placée après le dernier bloc antérieur à la fin du tour. */
+const turnsAfter = computed(() => {
+  const placed = new Map<number, TurnChangeDto[]>()
   const list = blocks.value
-  for (const snapshot of snapshotsStore.snapshots) {
-    // Seules les fins de tour jalonnent le document ; S0 et les « avant retour » restent dans le panneau E.
-    if (snapshot.kind !== 'turn') continue
-    const time = new Date(snapshot.createdAt).getTime()
+  for (const turn of snapshotsStore.changes?.turns ?? []) {
+    const time = new Date(turn.createdAt).getTime()
     let index = -1
     list.forEach((block, position) => {
       const entries = block.type === 'message' ? [block.entry] : block.entries
       if (entries.some((entry) => new Date(entry.occurredAt).getTime() <= time)) index = position
     })
     const key = list[index]?.number ?? 0
-    placed.set(key, [...(placed.get(key) ?? []), `S${snapshot.ordinal}`])
+    placed.set(key, [...(placed.get(key) ?? []), turn])
   }
   return placed
 })
@@ -233,10 +233,7 @@ onBeforeUnmount(() => {
             :errors="block.errors"
             :project-path="detail.projectPath"
           />
-          <p v-for="label in markersAfter.get(block.number) ?? []" :key="label" class="session__snapshot">
-            <span class="session__snapshot-cube" aria-hidden="true" />
-            {{ $t('snapshots.marker', { ordinal: label.slice(1) }) }}
-          </p>
+          <TurnChangeLine v-for="turn in turnsAfter.get(block.number) ?? []" :key="turn.snapshotId" :turn="turn" />
         </template>
         <p v-if="blocks.length === 0 && !loading" class="session__note">{{ $t('document.noEntries') }}</p>
         <div v-if="hasMore" ref="sentinel" class="session__note">{{ $t('document.loadingMore') }}</div>
@@ -257,6 +254,7 @@ onBeforeUnmount(() => {
       <div v-show="tab === 'report'" class="session__composer">
         <LiveComposer :macos="macos" @submit="submit" />
       </div>
+      <RestoreDialog />
     </template>
   </div>
 </template>
@@ -300,32 +298,6 @@ onBeforeUnmount(() => {
 .session__tab--active {
   border-bottom-color: var(--tx);
   color: var(--tx);
-}
-
-.session__snapshot {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 4px 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--tx3);
-}
-
-.session__snapshot::after {
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-  content: '';
-}
-
-.session__snapshot-cube {
-  width: 9px;
-  height: 9px;
-  border: 1px solid var(--acc);
-  transform: rotate(45deg);
 }
 
 .session__composer {

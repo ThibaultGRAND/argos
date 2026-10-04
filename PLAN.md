@@ -515,8 +515,8 @@ Les versions cibles sont **validées** (voir §5).
 | F03 | Recherche plein texte | V0 | terminé | [features/full_text_search.md](features/full_text_search.md) |
 | F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | terminé | [features/open_in_editor.md](features/open_in_editor.md) |
 | F05 | Lancer et piloter une session d'agent | V1 | à tester | [features/agent_sessions.md](features/agent_sessions.md) |
-| F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à tester | [features/agent_snapshots.md](features/agent_snapshots.md) |
-| F07 | Review façon PR | V1 | à tester | [features/pr_review.md](features/pr_review.md) |
+| F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à tester (refonte) | [features/agent_changes.md](features/agent_changes.md), [origine](features/agent_snapshots.md) |
+| F07 | Review façon PR | V1 | à tester (refonte) | [features/agent_changes.md](features/agent_changes.md), [origine](features/pr_review.md) |
 | F08 | Jauge de contexte et d'usage | V1 | à tester | [features/usage_gauge.md](features/usage_gauge.md) |
 | F09 | Distribution (builds 3 OS, GitHub Releases, mises à jour) | V1 | à définir | `features/distribution.md` |
 | F10 | Plan mode amélioré (plans comme objets, plan vs réalité) | V2 | à définir | `features/plan_mode.md` |
@@ -676,3 +676,4 @@ Aucun code avant la validation du plan de l'étape 0 (socle).
 | 2026-10-03 | Rangement de la racine du dépôt, sans déplacer PLAN.md ni features/ | Tout ranger dans docs/ | Garder la structure de CLAUDE.md §4.1 |
 | 2026-10-03 | Identité : symbole « Vesica » et brandbook (`brand/`) intégrés dans l'app, l'icône d'app (grille Apple pour macOS) et les README | Œil dans un hexagone provisoire | Identité définitive fournie par Thibault ; l'hexagone fait partie des usages interdits |
 | 2026-10-04 | F08 : taille des fenêtres et quota lus auprès de la CLI par une « sonde » (processus sans consigne, rien consommé), quota via l'API `/usage` expérimentale du SDK, lue de façon tolérante | Fenêtre devinée (200 k) ; appeler nous-mêmes l'API de claude.ai | Opus 5.5 a une fenêtre de 1 M : deviner serait faux ; Argos ne manipule jamais de jeton (CLAUDE.md §2) |
+| 2026-10-04 | Refonte F06 + F07 : captures invisibles, on parle de modifications ; travail de l'agent séparé des autres modifications ; annulation d'un fichier, d'un tour, de la session ; review par plage (session, depuis la dernière review, un tour) | Un snapshot visible par message (S0, S1…) ; comparaison au dernier commit git | Retour de Thibault : la première version rendait la review et les retours plus pénibles qu'avant |

@@ -6,4 +6,5 @@ export interface SnapshotRepository {
   save(snapshot: Snapshot): void
   listForSession(providerId: ProviderId, sessionExternalId: string): readonly Snapshot[]
   get(id: string): Snapshot | undefined
+  markReviewed(id: string, at: string): void
 }

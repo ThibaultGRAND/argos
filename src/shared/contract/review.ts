@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { SnapshotSchema } from './snapshots'
+import { TurnChangeSchema } from './snapshots'
 
 export const DiffLineSchema = z.object({
   type: z.enum(['context', 'add', 'del']),
@@ -25,14 +25,27 @@ export const FileDiffSchema = z.object({
   deletions: z.number().int(),
   hunks: z.array(DiffHunkSchema),
   truncated: z.boolean(),
+  /** Fichier de l'agent aussi modifié hors de ses tours. */
+  alsoOutside: z.boolean(),
 })
 export type FileDiffDto = z.infer<typeof FileDiffSchema>
 
+export const ReviewRangeSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('session') }),
+  z.object({ kind: z.literal('since-review') }),
+  z.object({ kind: z.literal('turn'), snapshotId: z.string() }),
+])
+export type ReviewRangeDto = z.infer<typeof ReviewRangeSchema>
+
 export const ReviewDiffSchema = z.object({
-  snapshots: z.array(SnapshotSchema),
+  range: ReviewRangeSchema,
+  turns: z.array(TurnChangeSchema),
+  sinceReviewAvailable: z.boolean(),
   fromId: z.string().nullable(),
   toId: z.string().nullable(),
   files: z.array(FileDiffSchema),
+  /** Modifications faites hors des tours de l'agent sur la plage. */
+  otherFiles: z.array(FileDiffSchema),
   truncated: z.boolean(),
 })
 export type ReviewDiffDto = z.infer<typeof ReviewDiffSchema>

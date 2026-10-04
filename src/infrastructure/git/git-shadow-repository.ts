@@ -64,12 +64,11 @@ export class GitShadowRepository implements ShadowRepository {
     return this.available
   }
 
-  async snapshot(projectPath: string, message: string): Promise<ShadowCommit> {
+  async snapshot(projectPath: string, message: string, compareTo?: string): Promise<ShadowCommit> {
     await this.ensureRepository(projectPath)
     const parent = await this.head(projectPath)
 
-    const exclusions = (await this.largeFiles(projectPath)).map((path) => `:(exclude,literal)${path}`)
-    await this.git(projectPath, ['add', '--all', '--', '.', ...exclusions])
+    await this.stageAll(projectPath)
     await this.git(projectPath, ['commit', '--allow-empty', '--no-verify', '--quiet', '-m', message])
     const commitHash = await this.head(projectPath)
     if (commitHash === null) throw new DomainError('snapshot_failed', 'Snapshot impossible', { projectPath })
@@ -77,7 +76,7 @@ export class GitShadowRepository implements ShadowRepository {
     return {
       commitHash,
       parentCommitHash: parent,
-      stats: await this.stats(projectPath, parent ?? EMPTY_TREE, commitHash),
+      stats: await this.stats(projectPath, compareTo ?? parent ?? EMPTY_TREE, commitHash),
     }
   }
 
@@ -97,6 +96,53 @@ export class GitShadowRepository implements ShadowRepository {
     await this.git(projectPath, ['restore', `--source=${commitHash}`, '--worktree', '--', '.'])
   }
 
+  async restoreFiles(projectPath: string, commitHash: string, paths: readonly string[]): Promise<void> {
+    const root = resolve(projectPath)
+    for (const path of paths) {
+      const absolute = resolve(root, path)
+      // Garde-fou : jamais d'écriture ni de suppression en dehors du projet.
+      if (relative(root, absolute).startsWith('..')) continue
+      const existed = (await this.git(projectPath, ['ls-tree', '--name-only', '-z', commitHash, '--', path]))
+        .split('\0')
+        .includes(path)
+      if (existed)
+        await this.git(projectPath, ['restore', `--source=${commitHash}`, '--worktree', '--', `:(literal)${path}`])
+      else await rm(absolute, { force: true })
+    }
+  }
+
+  async changedPaths(projectPath: string, fromCommit: string, toCommit: string): Promise<readonly string[]> {
+    // Format -z avec --name-status : « statut\0chemin\0 », ou « R100\0ancien\0nouveau\0 » pour un renommage.
+    const fields = (
+      await this.git(projectPath, ['diff', '--name-status', '-z', '--find-renames', fromCommit, toCommit])
+    ).split('\0')
+    const paths: string[] = []
+    for (let index = 0; index < fields.length; index += 1) {
+      const status = fields[index] ?? ''
+      if (status === '') continue
+      const count = status.startsWith('R') || status.startsWith('C') ? 2 : 1
+      paths.push(...fields.slice(index + 1, index + 1 + count).filter((path) => path !== ''))
+      index += count
+    }
+    return paths
+  }
+
+  async changesSince(projectPath: string, commitHash: string): Promise<{ files: FileDiff[]; truncated: boolean }> {
+    await this.ensureRepository(projectPath)
+    // L'état actuel passe par l'index du dépôt fantôme (jamais celui du projet) : les fichiers nouveaux sont comparés aussi.
+    await this.stageAll(projectPath)
+    const output = await this.git(projectPath, [
+      'diff',
+      '--cached',
+      '--no-color',
+      '--no-ext-diff',
+      '--unified=0',
+      '--find-renames',
+      commitHash,
+    ])
+    return parseUnifiedDiff(output, { maxLinesPerFile: 1_500, maxFiles: 200 })
+  }
+
   async diff(
     projectPath: string,
     fromCommit: string,
@@ -112,6 +158,12 @@ export class GitShadowRepository implements ShadowRepository {
       toCommit,
     ])
     return parseUnifiedDiff(output, { maxLinesPerFile: 1_500, maxFiles: 200 })
+  }
+
+  /** Ajoute l'état actuel du projet à l'index du dépôt fantôme, sans les fichiers trop gros. */
+  private async stageAll(projectPath: string): Promise<void> {
+    const exclusions = (await this.largeFiles(projectPath)).map((path) => `:(exclude,literal)${path}`)
+    await this.git(projectPath, ['add', '--all', '--', '.', ...exclusions])
   }
 
   private gitDirectory(projectPath: string): string {

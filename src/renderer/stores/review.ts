@@ -1,19 +1,26 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { NewReviewCommentDto, ReviewCommentDto, ReviewDiffDto } from '@shared/contract'
+import type { NewReviewCommentDto, ReviewCommentDto, ReviewDiffDto, ReviewRangeDto } from '@shared/contract'
 import { argos, unwrap } from '../services/argos'
 
-/** État d'affichage de la review de la session ouverte (F07). */
+/** État d'affichage de la review de la session ouverte (F07, refonte du 2026-10-04). */
 export const useReviewStore = defineStore('review', () => {
   const sessionExternalId = ref<string | undefined>()
+  const range = ref<ReviewRangeDto>({ kind: 'session' })
   const diff = ref<ReviewDiffDto | undefined>()
   const comments = ref<ReviewCommentDto[]>([])
   const loading = ref(false)
+  /** Onglet affiché dans la session ; la review s'ouvre aussi depuis le panneau D et les lignes des tours. */
+  const tab = ref<'report' | 'review'>('report')
+  /** Fichier à montrer à l'ouverture de la review. */
+  const focusFile = ref<string | undefined>()
 
   const pending = computed(() => comments.value.filter((comment) => comment.sentAt === null))
 
-  async function load(externalId: string | undefined, fromId?: string, toId?: string): Promise<void> {
+  async function load(externalId: string | undefined, nextRange?: ReviewRangeDto): Promise<void> {
+    if (externalId !== sessionExternalId.value) range.value = { kind: 'session' }
     sessionExternalId.value = externalId
+    if (nextRange !== undefined) range.value = nextRange
     if (externalId === undefined) {
       diff.value = undefined
       comments.value = []
@@ -22,11 +29,8 @@ export const useReviewStore = defineStore('review', () => {
     loading.value = true
     try {
       const [loadedDiff, loadedComments] = await Promise.all([
-        argos.invoke('review.diff', {
-          sessionExternalId: externalId,
-          ...(fromId === undefined ? {} : { fromId }),
-          ...(toId === undefined ? {} : { toId }),
-        }),
+        // Copie simple : un objet réactif de Vue ne traverse pas le pont IPC.
+        argos.invoke('review.diff', { sessionExternalId: externalId, range: { ...range.value } }),
         argos.invoke('review.comments.list', { sessionExternalId: externalId }),
       ])
       if (sessionExternalId.value !== externalId) return
@@ -35,6 +39,19 @@ export const useReviewStore = defineStore('review', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  /** Ouvre l'onglet Review sur une plage, éventuellement sur un fichier. */
+  async function open(nextRange: ReviewRangeDto, file?: string): Promise<void> {
+    tab.value = 'review'
+    focusFile.value = file
+    await load(sessionExternalId.value, nextRange)
+  }
+
+  async function markReviewed(): Promise<void> {
+    const toId = diff.value?.toId
+    if (toId == null) return
+    unwrap<'review.markReviewed'>(await argos.invoke('review.markReviewed', { snapshotId: toId }))
   }
 
   async function addComment(input: Omit<NewReviewCommentDto, 'sessionExternalId'>): Promise<void> {
@@ -60,12 +77,28 @@ export const useReviewStore = defineStore('review', () => {
     )
   }
 
-  /** Nouveau snapshot : la review se recalcule sur le dernier snapshot si l'utilisateur n'a pas choisi d'autre plage. */
+  /** Nouvelle capture (tour, retour, relu) : la review se recalcule sur la plage choisie. */
   function watchSnapshots(): void {
     argos.on('snapshots.updated', ({ sessionExternalId: changed }) => {
       if (changed === sessionExternalId.value) void load(changed)
     })
   }
 
-  return { sessionExternalId, diff, comments, pending, loading, load, addComment, deleteComment, send, watchSnapshots }
+  return {
+    sessionExternalId,
+    range,
+    diff,
+    comments,
+    pending,
+    loading,
+    tab,
+    focusFile,
+    load,
+    open,
+    markReviewed,
+    addComment,
+    deleteComment,
+    send,
+    watchSnapshots,
+  }
 })

@@ -70,8 +70,7 @@
   },
   "panel": {
     "files": "D. Files",
-    "snapshots": "E. Snapshots",
-    "sheet": "F. Sheet",
+    "sheet": "E. Sheet",
     "empty": "Nothing yet",
     "total": "total",
     "noFiles": "No files changed",
@@ -88,7 +87,8 @@
       "context": "Context",
       "inputTokens": "Input tokens",
       "outputTokens": "Output tokens"
-    }
+    },
+    "changes": "D. Changes"
   },
   "status": {
     "version": "v{version}",
@@ -243,31 +243,44 @@
     }
   },
   "snapshots": {
-    "title": "Snapshots",
-    "baseline": "Initial state",
-    "turn": "End of turn",
-    "before_restore": "Before restore",
-    "restore": "↺ restore",
-    "confirmTitle": "Restore S{ordinal}?",
-    "confirmBody": "The project files will go back to their state at {time}. A snapshot of the current state is taken first: you can undo this restore.",
-    "confirm": "Restore",
+    "unavailable": "git was not found: Argos cannot track or undo changes.",
+    "noChanges": "No changes since the session started.",
+    "fromHistory": "From the agent's history",
+    "review": "Review",
+    "revertAll": "Undo all",
+    "restoredBanner": "Files restored",
+    "undo": "Undo restore",
+    "turnLine": "{count} file changed | {count} files changed",
+    "revertTurn": "Go back before this turn",
+    "turnFallback": "turn at {time}",
+    "confirmTurnTitle": "Go back before this turn?",
+    "confirmTurnBody": "The project files will return to their state before “{label}”. Changes from later turns will be removed too. You can undo this.",
+    "confirmAllTitle": "Undo everything?",
+    "confirmAllBody": "The project files will return to their state before the session. You can undo this.",
+    "confirm": "Go back",
     "cancel": "Cancel",
-    "restored": "Project restored to S{ordinal}. A “before restore” snapshot lets you undo it.",
-    "unavailable": "git was not found: snapshots are disabled.",
-    "none": "Snapshots appear when Argos runs the session.",
-    "files": "{count} f.",
-    "marker": "Snapshot S{ordinal}"
+    "restored": "Files restored. “Undo restore” is in panel D.",
+    "undone": "Restore undone: the files are back as they were.",
+    "truncated": "Too many files: only the first 200 are listed.",
+    "reviewAll": "Review all",
+    "restoreFile": "Undo this file",
+    "alsoOutside": "also changed outside the agent",
+    "otherChanges": "Other changes · {count}",
+    "otherHint": "Files changed outside the agent's turns: by you between two turns, or by another session.",
+    "confirmFileTitle": "Undo the changes to this file?",
+    "confirmFileBody": "{file} will return to its state {when}. You can undo this.",
+    "whenSessionStart": "before the session",
+    "whenRangeStart": "at the start of the displayed range",
+    "fileRestored": "{file} restored. “Undo restore” is in panel D.",
+    "twoSessions": "Another session is already working in this project: their changes will mix in the turns."
   },
   "review": {
     "tabs": {
       "report": "Report",
       "review": "Review · {count} file | Review · {count} files"
     },
-    "from": "From",
-    "to": "To",
-    "snapshot": "S{ordinal} · {kind}",
-    "noSnapshots": "The review compares two snapshots: it is available for sessions run by Argos, after at least one turn.",
-    "noChanges": "No changes between these two snapshots.",
+    "noSnapshots": "The review shows what an agent driven by Argos changed: it is available after a turn that changed files.",
+    "noChanges": "No changes in this range.",
     "status": {
       "added": "added",
       "modified": "modified",
@@ -287,7 +300,19 @@
     "pending": "{count} comment to send | {count} comments to send",
     "send": "Send to the agent",
     "sentNotice": "Comments sent to the agent.",
-    "lineTitle": "Open at line {line}"
+    "lineTitle": "Open at line {line}",
+    "range": "Compare",
+    "ranges": {
+      "session": "Whole session",
+      "since-review": "Since my last review",
+      "turn": "Turn · {time} · {label}"
+    },
+    "markReviewed": "Mark as reviewed",
+    "markedNotice": "Marked as reviewed: your next review can start from here.",
+    "nothingSinceReview": "Nothing new since your last review.",
+    "summary": "{count} file | {count} files",
+    "otherChanges": "Other changes · {count}",
+    "otherHint": "Changed outside the agent's turns in this range. They cannot be commented."
   },
   "notifications": {
     "permission": {

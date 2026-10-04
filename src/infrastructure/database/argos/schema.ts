@@ -26,17 +26,21 @@ export const snapshots = sqliteTable(
     providerId: text('provider_id').notNull(),
     sessionExternalId: text('session_external_id').notNull(),
     ordinal: integer('ordinal').notNull(),
-    kind: text('kind', { enum: ['baseline', 'turn', 'before_restore'] }).notNull(),
+    kind: text('kind', { enum: ['baseline', 'prompt', 'turn', 'before_restore'] }).notNull(),
     commitHash: text('commit_hash').notNull(),
     parentCommitHash: text('parent_commit_hash'),
     filesChanged: integer('files_changed').notNull(),
     linesAdded: integer('lines_added').notNull(),
     linesRemoved: integer('lines_removed').notNull(),
+    /** Début de la consigne qui a lancé le tour (refonte F06) ; nul pour S0 et les captures de sécurité. */
+    label: text('label'),
+    /** Review faite jusqu'à cette capture (F07, « Depuis ma dernière review »). */
+    reviewedAt: text('reviewed_at'),
     createdAt: text('created_at').notNull(),
     updatedAt: text('updated_at').notNull(),
   },
   (table) => [
-    // Snapshots d'une session, dans l'ordre (panneau E).
+    // Captures d'une session, dans l'ordre.
     index('snapshots_session_idx').on(table.providerId, table.sessionExternalId, table.ordinal),
   ],
 )

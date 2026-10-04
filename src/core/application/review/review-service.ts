@@ -6,13 +6,28 @@ import type { ShadowRepository } from '../../domain/ports/shadow-repository'
 import type { SnapshotRepository } from '../../domain/ports/snapshot-repository'
 import type { FileDiff } from '../../domain/review/diff'
 import { formatReviewMessage, type CommentSide, type ReviewComment } from '../../domain/review/review-comment'
-import type { Snapshot } from '../../domain/snapshots/snapshot'
+import {
+  checkpointsOf,
+  reviewBounds,
+  type AttributedFile,
+  type ReviewRange,
+  type Snapshot,
+  type TurnChange,
+} from '../../domain/snapshots/snapshot'
+import type { ChangeAttribution } from '../snapshots/change-attribution'
 
 export interface ReviewDiff {
-  readonly snapshots: readonly Snapshot[]
+  readonly range: ReviewRange
+  /** Tours qui ont modifié des fichiers, pour choisir « Un tour ». */
+  readonly turns: readonly TurnChange[]
+  /** Vrai si « Depuis ma dernière review » a quelque chose à montrer. */
+  readonly sinceReviewAvailable: boolean
   readonly from: Snapshot | null
   readonly to: Snapshot | null
-  readonly files: readonly FileDiff[]
+  /** Travail de l'agent sur la plage. */
+  readonly files: readonly AttributedFile<FileDiff>[]
+  /** Modifications faites hors des tours de l'agent sur la plage. */
+  readonly otherFiles: readonly FileDiff[]
   readonly truncated: boolean
 }
 
@@ -31,6 +46,7 @@ export type SendToSession = (sessionId: number, text: string) => Promise<string>
 
 export interface ReviewServiceDependencies {
   readonly shadow: ShadowRepository
+  readonly attribution: ChangeAttribution
   readonly snapshots: SnapshotRepository
   readonly comments: ReviewCommentRepository
   readonly preferences: PreferencesRepository
@@ -46,22 +62,27 @@ const MAX_COMMENT_LENGTH = 5_000
 export class ReviewService {
   constructor(private readonly deps: ReviewServiceDependencies) {}
 
-  /**
-   * Diff entre deux snapshots ; par défaut du premier (S0) au dernier snapshot de fin de tour
-   * (un « avant retour » n'est pas un travail de l'agent à relire).
-   */
-  async diff(sessionExternalId: string, fromId?: string, toId?: string): Promise<ReviewDiff> {
+  /** Changements d'une session : toute la session, depuis la dernière review, ou un tour (refonte du 2026-10-04). */
+  async diff(sessionExternalId: string, range: ReviewRange = { kind: 'session' }): Promise<ReviewDiff> {
     const snapshots = this.deps.snapshots.listForSession(PROVIDER, sessionExternalId)
-    const pick = (id: string | undefined, fallback: Snapshot | undefined): Snapshot | undefined =>
-      id === undefined ? fallback : snapshots.find((snapshot) => snapshot.id === id)
-    const from = pick(fromId, snapshots[0])
-    const lastTurn = [...snapshots].reverse().find((snapshot) => snapshot.kind === 'turn')
-    const to = pick(toId, lastTurn ?? snapshots.at(-1))
-    if (from === undefined || to === undefined || from.id === to.id) {
-      return { snapshots, from: from ?? null, to: to ?? null, files: [], truncated: false }
+    const { turns } = checkpointsOf(snapshots)
+    const sinceReviewAvailable = reviewBounds(snapshots, { kind: 'since-review' }) !== undefined
+    const bounds = reviewBounds(snapshots, range)
+    if (bounds === undefined) {
+      return { range, turns, sinceReviewAvailable, from: null, to: null, files: [], otherFiles: [], truncated: false }
     }
+    const { from, to } = bounds
     const { files, truncated } = await this.deps.shadow.diff(to.projectPath, from.commitHash, to.commitHash)
-    return { snapshots, from, to, files, truncated }
+    const { agent, other } = await this.deps.attribution.attribute(files, bounds.turns, bounds.outside)
+    return { range, turns, sinceReviewAvailable, from, to, files: agent, otherFiles: other, truncated }
+  }
+
+  /** « Marquer comme relu » : la prochaine review « depuis ma dernière review » part de cette capture. */
+  markReviewed(snapshotId: string): void {
+    if (this.deps.snapshots.get(snapshotId) === undefined) {
+      throw new DomainError('snapshot_not_found', 'Capture introuvable', { snapshotId })
+    }
+    this.deps.snapshots.markReviewed(snapshotId, this.deps.now().toISOString())
   }
 
   listComments(sessionExternalId: string): readonly ReviewComment[] {
@@ -99,10 +120,14 @@ export class ReviewService {
     if (pending.length === 0) throw new DomainError('no_comment_to_send', 'Aucun commentaire à envoyer')
     const { language } = await this.deps.preferences.load()
     const runId = await this.deps.sendToSession(sessionId, formatReviewMessage(pending, language))
+    const at = this.deps.now().toISOString()
     this.deps.comments.markSent(
       pending.map((comment) => comment.id),
-      this.deps.now().toISOString(),
+      at,
     )
+    // Envoyer ses remarques, c'est avoir relu jusqu'au dernier tour de l'agent.
+    const lastTurn = checkpointsOf(this.deps.snapshots.listForSession(PROVIDER, sessionExternalId)).turns.at(-1)
+    if (lastTurn !== undefined) this.deps.snapshots.markReviewed(lastTurn.snapshot.id, at)
     return { runId, sent: pending.length }
   }
 }

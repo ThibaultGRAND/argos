@@ -2,11 +2,22 @@ import { DomainError } from '../../domain/errors'
 import type { ProviderId } from '../../domain/history/provider'
 import type { ShadowCommit, ShadowRepository } from '../../domain/ports/shadow-repository'
 import type { SnapshotRepository } from '../../domain/ports/snapshot-repository'
-import { nextOrdinal, type Snapshot, type SnapshotKind } from '../../domain/snapshots/snapshot'
+import type { FileDiff } from '../../domain/review/diff'
+import {
+  checkpointsOf,
+  nextOrdinal,
+  turnLabel,
+  type AttributedFile,
+  type Snapshot,
+  type SnapshotKind,
+  type TurnChange,
+} from '../../domain/snapshots/snapshot'
+import type { ChangeAttribution } from './change-attribution'
 
 export interface SnapshotServiceDependencies {
   readonly shadow: ShadowRepository
   readonly repository: SnapshotRepository
+  readonly attribution: ChangeAttribution
   /** Dossiers des projets dans lesquels un agent travaille en ce moment. */
   readonly activeProjects: () => readonly string[]
   readonly newId: () => string
@@ -18,20 +29,45 @@ export interface SnapshotServiceDependencies {
 interface RunTracking {
   readonly projectPath: string
   sessionExternalId: string | null
-  /** Snapshot de départ pris avant que la session ne soit identifiée : enregistré dès qu'elle l'est. */
+  /** Capture de départ prise avant que la session ne soit identifiée : enregistrée dès qu'elle l'est. */
   pendingBaseline: { readonly commit: ShadowCommit; readonly at: Date } | undefined
+  /** Début de la première consigne du tour en cours. */
+  turnLabel: string | null
+  /** Vrai entre l'envoi d'une consigne et la fin du tour : une consigne de plus rejoint le tour en cours. */
+  inTurn: boolean
 }
 
-export interface SnapshotList {
+/** Modifications d'une session pilotée par Argos, telles que les montre l'interface (features/agent_changes.md). */
+export interface SessionChanges {
+  /** Faux si git est absent : aucune capture possible. */
   readonly available: boolean
-  readonly snapshots: readonly Snapshot[]
+  /** Vrai si Argos a capturé cette session (sinon, le panneau D garde la liste tirée de l'historique). */
+  readonly tracked: boolean
+  /** Première capture de la session : état d'avant la session. */
+  readonly start: Snapshot | undefined
+  /** Fichiers qui diffèrent aujourd'hui de l'état d'avant la session, modifiés par l'agent. */
+  readonly agentFiles: readonly AttributedFile<FileDiff>[]
+  /** Fichiers qui diffèrent aujourd'hui, modifiés seulement hors des tours de l'agent. */
+  readonly otherFiles: readonly FileDiff[]
+  readonly truncated: boolean
+  readonly turns: readonly TurnChange[]
+  /** Capture de sécurité du dernier retour, s'il est encore annulable. */
+  readonly undoable: Snapshot | undefined
 }
+
+export type RestoreAction =
+  | { readonly kind: 'before-turn'; readonly snapshotId: string }
+  | { readonly kind: 'session-start'; readonly sessionExternalId: string }
+  | { readonly kind: 'undo'; readonly sessionExternalId: string }
+  /** Quelques fichiers remis dans l'état d'une capture de la session (début de session ou début de la plage relue). */
+  | { readonly kind: 'files'; readonly snapshotId: string; readonly paths: readonly string[] }
 
 const PROVIDER: ProviderId = 'claude'
 
 /**
- * Snapshots des sessions pilotées par Argos (F06) : S0 avant que l'agent n'agisse, un snapshot par fin de tour,
- * retour en arrière précédé d'un snapshot « avant retour ». Un échec de snapshot n'empêche jamais l'agent de travailler.
+ * Captures des sessions pilotées par Argos : avant la première consigne, avant chaque consigne suivante si le projet
+ * a changé, à chaque fin de tour qui modifie des fichiers. Retours en arrière précédés d'une capture de sécurité.
+ * Un échec de capture n'empêche jamais l'agent de travailler.
  */
 export class SnapshotService {
   private readonly runs = new Map<string, RunTracking>()
@@ -40,91 +76,159 @@ export class SnapshotService {
 
   constructor(private readonly deps: SnapshotServiceDependencies) {}
 
-  /** S0 : à appeler avant de démarrer l'agent. Renvoie `undefined` si le snapshot est impossible (git absent…). */
-  async takeBaseline(projectPath: string): Promise<ShadowCommit | undefined> {
+  /**
+   * Capture de départ d'un lancement, à prendre avant de démarrer l'agent. Pour une session reprise, comparée à sa
+   * dernière capture. `undefined` si la capture est impossible (git absent…).
+   */
+  async takeBaseline(projectPath: string, sessionExternalId?: string): Promise<ShadowCommit | undefined> {
     try {
       if (!(await this.deps.shadow.isAvailable())) return undefined
+      const previous = sessionExternalId === undefined ? undefined : this.lastCapture(sessionExternalId)
       return await this.serialized(projectPath, () =>
-        this.deps.shadow.snapshot(projectPath, 'Argos : S0 (avant la session)'),
+        this.deps.shadow.snapshot(projectPath, 'Argos : début de session', previous?.commitHash),
       )
     } catch (error) {
-      this.deps.log(`Snapshot de départ impossible : ${error instanceof Error ? error.message : String(error)}`)
+      this.deps.log(`Capture de départ impossible : ${describe(error)}`)
       return undefined
     }
   }
 
-  /** Relie le snapshot de départ à la session démarrée. */
+  /** Relie la capture de départ au lancement ; la première consigne désigne le premier tour. */
   trackRun(
     runId: string,
     projectPath: string,
     sessionExternalId: string | null,
     baseline: ShadowCommit | undefined,
+    firstPrompt: string,
   ): void {
-    const tracking: RunTracking = { projectPath, sessionExternalId, pendingBaseline: undefined }
+    const tracking: RunTracking = {
+      projectPath,
+      sessionExternalId,
+      pendingBaseline: undefined,
+      turnLabel: turnLabel(firstPrompt),
+      inTurn: true,
+    }
     this.runs.set(runId, tracking)
     if (baseline === undefined) return
     if (sessionExternalId === null) tracking.pendingBaseline = { commit: baseline, at: this.deps.now() }
-    else this.record(tracking.projectPath, sessionExternalId, 'baseline', baseline, this.deps.now())
+    else this.recordBaseline(projectPath, sessionExternalId, baseline, this.deps.now())
   }
 
-  /** La session a reçu son identifiant : le snapshot de départ en attente est enregistré. */
+  /** La session a reçu son identifiant : la capture de départ en attente est enregistrée. */
   identified(runId: string, sessionExternalId: string): void {
     const tracking = this.runs.get(runId)
     if (tracking === undefined) return
     tracking.sessionExternalId = sessionExternalId
     const pending = tracking.pendingBaseline
     tracking.pendingBaseline = undefined
-    if (pending !== undefined)
-      this.record(tracking.projectPath, sessionExternalId, 'baseline', pending.commit, pending.at)
+    if (pending !== undefined) this.recordBaseline(tracking.projectPath, sessionExternalId, pending.commit, pending.at)
   }
 
-  /** Fin d'un tour : un snapshot des fichiers du projet. */
+  /**
+   * À appeler avant d'envoyer une consigne à une session déjà lancée. Entre deux tours, le projet est capturé :
+   * ce qui a changé depuis la fin du tour précédent a été fait hors de l'agent.
+   */
+  async beforePrompt(runId: string, text: string): Promise<void> {
+    const tracking = this.runs.get(runId)
+    if (tracking === undefined) return
+    if (tracking.inTurn) {
+      tracking.turnLabel ??= turnLabel(text)
+      return
+    }
+    tracking.inTurn = true
+    tracking.turnLabel = turnLabel(text)
+    await this.capture(tracking, 'prompt', null)
+  }
+
+  /** Fin d'un tour : une capture, gardée seulement si des fichiers ont changé. */
   async afterTurn(runId: string): Promise<void> {
     const tracking = this.runs.get(runId)
-    if (tracking?.sessionExternalId === null || tracking === undefined) return
-    const sessionExternalId = tracking.sessionExternalId
-    try {
-      if (!(await this.deps.shadow.isAvailable())) return
-      const ordinal = nextOrdinal(this.deps.repository.listForSession(PROVIDER, sessionExternalId))
-      const commit = await this.serialized(tracking.projectPath, () =>
-        this.deps.shadow.snapshot(tracking.projectPath, `Argos : S${ordinal} (fin de tour)`),
-      )
-      this.record(tracking.projectPath, sessionExternalId, 'turn', commit, this.deps.now())
-    } catch (error) {
-      this.deps.log(`Snapshot de fin de tour impossible : ${error instanceof Error ? error.message : String(error)}`)
-    }
+    if (tracking === undefined) return
+    const label = tracking.turnLabel
+    tracking.turnLabel = null
+    tracking.inTurn = false
+    await this.capture(tracking, 'turn', label)
   }
 
-  async list(sessionExternalId: string): Promise<SnapshotList> {
-    return {
-      available: await this.deps.shadow.isAvailable(),
-      snapshots: this.deps.repository.listForSession(PROVIDER, sessionExternalId),
-    }
+  async changes(sessionExternalId: string): Promise<SessionChanges> {
+    const available = await this.deps.shadow.isAvailable()
+    const { start, turns, outside, undoable } = checkpointsOf(this.listFor(sessionExternalId))
+    const empty = { start, agentFiles: [], otherFiles: [], truncated: false, turns, undoable }
+    if (!available || start === undefined) return { available, tracked: start !== undefined, ...empty }
+    const { files, truncated } = await this.serialized(start.projectPath, () =>
+      this.deps.shadow.changesSince(start.projectPath, start.commitHash),
+    )
+    const { agent, other } = await this.deps.attribution.attribute(files, turns, outside)
+    return { available, tracked: true, start, agentFiles: agent, otherFiles: other, truncated, turns, undoable }
   }
 
-  /** Revient à un snapshot ; un snapshot « avant retour » est pris d'abord, pour pouvoir annuler. */
-  async restore(snapshotId: string): Promise<Snapshot> {
-    const target = this.deps.repository.get(snapshotId)
-    if (target === undefined) throw new DomainError('snapshot_not_found', 'Snapshot introuvable', { snapshotId })
+  /** Annuler des fichiers, un tour, toute la session, ou le dernier retour. Toujours annulable à son tour. */
+  async restore(action: RestoreAction): Promise<void> {
+    const target = this.targetOf(action)
     if (this.deps.activeProjects().includes(target.projectPath)) {
       throw new DomainError('agent_running', 'Un agent travaille dans ce projet', { projectPath: target.projectPath })
     }
-    return this.serialized(target.projectPath, async () => {
-      const ordinal = nextOrdinal(this.deps.repository.listForSession(target.providerId, target.sessionExternalId))
-      const safetyCommit = await this.deps.shadow.snapshot(
-        target.projectPath,
-        `Argos : S${ordinal} (avant retour à S${target.ordinal})`,
-      )
-      const safety = this.record(
-        target.projectPath,
-        target.sessionExternalId,
-        'before_restore',
-        safetyCommit,
-        this.deps.now(),
-      )
-      await this.deps.shadow.restore(target.projectPath, target.commitHash)
-      return safety
+    await this.serialized(target.projectPath, async () => {
+      const previous = this.lastCapture(target.sessionExternalId)
+      const safety = await this.deps.shadow.snapshot(target.projectPath, 'Argos : avant retour', previous?.commitHash)
+      this.record(target.projectPath, target.sessionExternalId, 'before_restore', safety, this.deps.now())
+      if (action.kind === 'files')
+        await this.deps.shadow.restoreFiles(target.projectPath, target.commitHash, action.paths)
+      else await this.deps.shadow.restore(target.projectPath, target.commitHash)
     })
+  }
+
+  private targetOf(action: RestoreAction): Snapshot {
+    if (action.kind === 'files') {
+      const snapshot = this.deps.repository.get(action.snapshotId)
+      if (snapshot === undefined || action.paths.length === 0) throw notFound(action.kind)
+      return snapshot
+    }
+    const sessionExternalId =
+      action.kind === 'before-turn'
+        ? this.deps.repository.get(action.snapshotId)?.sessionExternalId
+        : action.sessionExternalId
+    const checkpoints = checkpointsOf(sessionExternalId === undefined ? [] : this.listFor(sessionExternalId))
+    const target =
+      action.kind === 'before-turn'
+        ? checkpoints.turns.find((turn) => turn.snapshot.id === action.snapshotId)?.before
+        : action.kind === 'session-start'
+          ? checkpoints.start
+          : checkpoints.undoable
+    if (target === undefined) throw notFound(action.kind)
+    return target
+  }
+
+  /** Capture de début ou de fin de tour, enregistrée seulement si le projet a changé depuis la dernière capture. */
+  private async capture(tracking: RunTracking, kind: SnapshotKind, label: string | null): Promise<void> {
+    const sessionExternalId = tracking.sessionExternalId
+    if (sessionExternalId === null) return
+    try {
+      if (!(await this.deps.shadow.isAvailable())) return
+      const previous = this.lastCapture(sessionExternalId)
+      const commit = await this.serialized(tracking.projectPath, () =>
+        this.deps.shadow.snapshot(tracking.projectPath, `Argos : ${kind} (${label ?? '—'})`, previous?.commitHash),
+      )
+      // Rien n'a changé : rien de visible (le commit reste dans le dépôt fantôme, sans effet).
+      if (previous !== undefined && commit.stats.filesChanged === 0) return
+      this.record(tracking.projectPath, sessionExternalId, kind, commit, this.deps.now(), label)
+    } catch (error) {
+      this.deps.log(`Capture impossible (${kind}) : ${describe(error)}`)
+    }
+  }
+
+  /** La capture de départ d'un lancement repris n'est gardée que si le projet a changé depuis. */
+  private recordBaseline(projectPath: string, sessionExternalId: string, commit: ShadowCommit, at: Date): void {
+    if (this.lastCapture(sessionExternalId) !== undefined && commit.stats.filesChanged === 0) return
+    this.record(projectPath, sessionExternalId, 'baseline', commit, at)
+  }
+
+  private listFor(sessionExternalId: string): readonly Snapshot[] {
+    return this.deps.repository.listForSession(PROVIDER, sessionExternalId)
+  }
+
+  private lastCapture(sessionExternalId: string): Snapshot | undefined {
+    return this.listFor(sessionExternalId).at(-1)
   }
 
   private record(
@@ -133,17 +237,20 @@ export class SnapshotService {
     kind: SnapshotKind,
     commit: ShadowCommit,
     at: Date,
+    label: string | null = null,
   ): Snapshot {
     const snapshot: Snapshot = {
       id: this.deps.newId(),
       projectPath,
       providerId: PROVIDER,
       sessionExternalId,
-      ordinal: nextOrdinal(this.deps.repository.listForSession(PROVIDER, sessionExternalId)),
+      ordinal: nextOrdinal(this.listFor(sessionExternalId)),
       kind,
       commitHash: commit.commitHash,
       parentCommitHash: commit.parentCommitHash,
       ...commit.stats,
+      label,
+      reviewedAt: null,
       createdAt: at.toISOString(),
     }
     this.deps.repository.save(snapshot)
@@ -161,3 +268,7 @@ export class SnapshotService {
     return next
   }
 }
+
+const describe = (error: unknown): string => (error instanceof Error ? error.message : String(error))
+const notFound = (kind: RestoreAction['kind']): DomainError =>
+  new DomainError('snapshot_not_found', 'Point de retour introuvable', { kind })

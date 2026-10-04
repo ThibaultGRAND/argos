@@ -19,8 +19,14 @@ export class LiveCommands {
     if (project === undefined) throw new DomainError('project_not_found', 'Projet introuvable', { projectId })
     const baseline = await this.snapshots.takeBaseline(project.path)
     const runId = this.sessions.start(project.path, text, model)
-    this.snapshots.trackRun(runId, project.path, null, baseline)
+    this.snapshots.trackRun(runId, project.path, null, baseline, text)
     return runId
+  }
+
+  /** Consigne pour une session déjà lancée : entre deux tours, le projet est capturé avant que l'agent ne reprenne. */
+  async send(runId: string, text: string): Promise<void> {
+    await this.snapshots.beforePrompt(runId, text)
+    this.sessions.send(runId, text)
   }
 
   async continueSession(sessionId: number, text: string, model?: string): Promise<string> {
@@ -28,12 +34,12 @@ export class LiveCommands {
     if (session === undefined) throw new DomainError('session_not_found', 'Session introuvable', { sessionId })
     const active = this.sessions.activeRunFor(session.externalId)
     if (active !== undefined) {
-      this.sessions.send(active, text)
+      await this.send(active, text)
       return active
     }
-    const baseline = await this.snapshots.takeBaseline(session.projectPath)
+    const baseline = await this.snapshots.takeBaseline(session.projectPath, session.externalId)
     const runId = this.sessions.continue(session.externalId, session.projectPath, text, model)
-    this.snapshots.trackRun(runId, session.projectPath, session.externalId, baseline)
+    this.snapshots.trackRun(runId, session.projectPath, session.externalId, baseline, text)
     return runId
   }
 }

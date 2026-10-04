@@ -7,8 +7,12 @@ import { useNoticesStore } from '../../stores/notices'
 import { useReviewStore } from '../../stores/review'
 import { joinProjectPath } from '../../utils/format'
 
-/** Diff d'un fichier : numéros de ligne avant / après, commentaires sur une ligne (F07). */
-const props = defineProps<{ file: FileDiffDto; projectPath: string; snapshotId: string | null }>()
+/**
+ * Diff d'un fichier : numéros de ligne avant / après, commentaires sur une ligne (F07), « Annuler ce fichier ».
+ * `snapshotId` nul : fichier non commentable (autres modifications).
+ */
+const props = defineProps<{ file: FileDiffDto; projectPath: string; snapshotId: string | null; restorable: boolean }>()
+const emit = defineEmits<{ restore: [] }>()
 const { t } = useI18n()
 const review = useReviewStore()
 const notices = useNoticesStore()
@@ -80,7 +84,11 @@ function openAt(line?: number): void {
       <button v-if="file.status !== 'deleted'" type="button" class="file__open" @click="openAt()">
         {{ t('review.openFile') }}
       </button>
+      <button v-if="restorable" type="button" class="file__open file__open--danger" @click="emit('restore')">
+        {{ t('snapshots.restoreFile') }}
+      </button>
     </header>
+    <p v-if="file.alsoOutside" class="file__mention">{{ t('snapshots.alsoOutside') }}</p>
 
     <div v-if="open" class="file__body">
       <p v-if="file.binary" class="file__note">{{ t('review.binary') }}</p>
@@ -238,7 +246,20 @@ function openAt(line?: number): void {
 }
 
 .file__open:hover {
+  color: var(--tx);
+}
+
+.file__open--danger:hover {
   color: var(--acc);
+}
+
+.file__mention {
+  margin: 0;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--caution);
 }
 
 .file__note {

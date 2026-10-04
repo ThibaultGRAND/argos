@@ -5,6 +5,7 @@ import type { ShadowRepository } from '../../domain/ports/shadow-repository'
 import type { SnapshotRepository } from '../../domain/ports/snapshot-repository'
 import type { ReviewComment } from '../../domain/review/review-comment'
 import type { Snapshot } from '../../domain/snapshots/snapshot'
+import { ChangeAttribution } from '../snapshots/change-attribution'
 import { ReviewService } from './review-service'
 
 const snapshot = (id: string, ordinal: number): Snapshot => ({
@@ -16,10 +17,23 @@ const snapshot = (id: string, ordinal: number): Snapshot => ({
   kind: ordinal === 0 ? 'baseline' : 'turn',
   commitHash: `c${ordinal}`,
   parentCommitHash: null,
-  filesChanged: 0,
-  linesAdded: 0,
+  filesChanged: 1,
+  linesAdded: 1,
   linesRemoved: 0,
+  label: null,
+  reviewedAt: null,
   createdAt: '2026-10-03T12:00:00.000Z',
+})
+
+const fileDiff = (path: string) => ({
+  path,
+  oldPath: null,
+  status: 'modified' as const,
+  binary: false,
+  additions: 1,
+  deletions: 0,
+  hunks: [],
+  truncated: false,
 })
 
 function setup(snapshots: Snapshot[]) {
@@ -34,15 +48,20 @@ function setup(snapshots: Snapshot[]) {
       stats: { filesChanged: 0, linesAdded: 0, linesRemoved: 0 },
     }),
     restore: async () => undefined,
+    restoreFiles: async () => undefined,
+    changedPaths: async (_project, from, to) => (from === 'c1' && to === 'c2' ? ['notes.md'] : ['a.ts']),
+    changesSince: async () => ({ files: [], truncated: false }),
     diff: async (_project, from, to) => {
       diffs.push([from, to])
-      return { files: [], truncated: false }
+      return { files: [fileDiff('a.ts'), fileDiff('notes.md')], truncated: false }
     },
   }
+  const reviewed: string[] = []
   const snapshotRepository: SnapshotRepository = {
     save: () => undefined,
     listForSession: () => snapshots,
-    get: () => undefined,
+    get: (id) => snapshots.find((candidate) => candidate.id === id),
+    markReviewed: (id) => void reviewed.push(id),
   }
   const comments: ReviewCommentRepository = {
     save: (comment) => void rows.push(comment),
@@ -59,6 +78,7 @@ function setup(snapshots: Snapshot[]) {
   let id = 0
   const service = new ReviewService({
     shadow,
+    attribution: new ChangeAttribution(shadow),
     snapshots: snapshotRepository,
     comments,
     preferences: { load: async () => defaultPreferences, save: async () => undefined },
@@ -69,7 +89,7 @@ function setup(snapshots: Snapshot[]) {
     newId: () => `id-${++id}`,
     now: () => new Date('2026-10-03T13:00:00.000Z'),
   })
-  return { service, diffs, sent, rows }
+  return { service, diffs, sent, rows, reviewed }
 }
 
 const newComment = {
@@ -82,19 +102,49 @@ const newComment = {
 }
 
 describe('ReviewService', () => {
-  it('compare par défaut le premier et le dernier snapshot, ou les snapshots choisis', async () => {
+  it('compare toute la session par défaut, ou un seul tour', async () => {
     const { service, diffs } = setup([snapshot('a', 0), snapshot('b', 1), snapshot('c', 2)])
-    expect((await service.diff('s')).from?.id).toBe('a')
-    await service.diff('s', 'b', 'c')
+    const all = await service.diff('s')
+    expect([all.from?.id, all.turns.map((turn) => turn.snapshot.id)]).toEqual(['a', ['b', 'c']])
+    await service.diff('s', { kind: 'turn', snapshotId: 'c' })
     expect(diffs).toEqual([
       ['c0', 'c2'],
       ['c1', 'c2'],
     ])
   })
 
+  it('montre ce qui a changé depuis la dernière review', async () => {
+    const { service } = setup([
+      snapshot('a', 0),
+      { ...snapshot('b', 1), reviewedAt: '2026-10-03T12:30:00.000Z' },
+      snapshot('c', 2),
+    ])
+    const diff = await service.diff('s', { kind: 'since-review' })
+    expect([diff.sinceReviewAvailable, diff.from?.id, diff.to?.id]).toEqual([true, 'b', 'c'])
+  })
+
+  it('marque une capture comme relue et refuse une capture inconnue', () => {
+    const { service, reviewed } = setup([snapshot('a', 0)])
+    service.markReviewed('a')
+    expect(reviewed).toEqual(['a'])
+    expect(() => service.markReviewed('z')).toThrow()
+  })
+
   it('s’arrête par défaut au dernier snapshot de fin de tour, pas à un « avant retour »', async () => {
     const { service } = setup([snapshot('a', 0), snapshot('b', 1), { ...snapshot('c', 2), kind: 'before_restore' }])
     expect((await service.diff('s')).to?.id).toBe('b')
+  })
+
+  it('sépare le travail de l’agent des modifications faites entre ses tours', async () => {
+    const { service } = setup([
+      snapshot('a', 0),
+      snapshot('b', 1),
+      { ...snapshot('p', 2), kind: 'prompt' },
+      snapshot('c', 3),
+    ])
+    const diff = await service.diff('s')
+    expect(diff.files.map((entry) => entry.file.path)).toEqual(['a.ts'])
+    expect(diff.otherFiles.map((file) => file.path)).toEqual(['notes.md'])
   })
 
   it('ne compare rien sans au moins deux snapshots', async () => {
@@ -104,13 +154,14 @@ describe('ReviewService', () => {
   })
 
   it('enregistre les commentaires, refuse un commentaire vide, puis envoie seulement ceux pas encore envoyés', async () => {
-    const { service, sent, rows } = setup([])
+    const { service, sent, rows, reviewed } = setup([snapshot('a', 0), snapshot('b', 1)])
     expect(() => service.addComment({ ...newComment, body: '   ' })).toThrow()
     service.addComment({ ...newComment, body: 'Ajoute un test' })
     const result = await service.send(42, 's')
     expect(result).toEqual({ runId: 'run-1', sent: 1 })
     expect(sent[0]).toContain('Remarque : Ajoute un test')
     expect(rows[0]?.sentAt).toBe('2026-10-03T13:00:00.000Z')
+    expect(reviewed).toEqual(['b'])
     await expect(service.send(42, 's')).rejects.toMatchObject({ code: 'no_comment_to_send' })
   })
 })

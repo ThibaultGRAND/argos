@@ -70,8 +70,7 @@
   },
   "panel": {
     "files": "D. Fichiers",
-    "snapshots": "E. Snapshots",
-    "sheet": "F. Fiche",
+    "sheet": "E. Fiche",
     "empty": "Rien pour l'instant",
     "total": "total",
     "noFiles": "Aucun fichier modifié",
@@ -88,7 +87,8 @@
       "context": "Contexte",
       "inputTokens": "Tokens en entrée",
       "outputTokens": "Tokens en sortie"
-    }
+    },
+    "changes": "D. Modifications"
   },
   "status": {
     "version": "v{version}",
@@ -243,31 +243,44 @@
     }
   },
   "snapshots": {
-    "title": "Snapshots",
-    "baseline": "État initial",
-    "turn": "Fin de tour",
-    "before_restore": "Avant retour",
-    "restore": "↺ revenir",
-    "confirmTitle": "Revenir à S{ordinal} ?",
-    "confirmBody": "Les fichiers du projet reviendront à leur état de {time}. Un snapshot de l'état actuel est pris avant : tu pourras annuler ce retour.",
+    "unavailable": "git est introuvable : Argos ne peut pas suivre ni annuler les modifications.",
+    "noChanges": "Aucune modification depuis le début de la session.",
+    "fromHistory": "D'après l'historique de l'agent",
+    "review": "Revoir",
+    "revertAll": "Tout annuler",
+    "restoredBanner": "Retour effectué",
+    "undo": "Annuler le retour",
+    "turnLine": "{count} fichier modifié | {count} fichiers modifiés",
+    "revertTurn": "Revenir avant ce tour",
+    "turnFallback": "tour de {time}",
+    "confirmTurnTitle": "Revenir avant ce tour ?",
+    "confirmTurnBody": "Les fichiers du projet reviendront à leur état d'avant « {label} ». Les modifications des tours suivants seront aussi retirées. Tu pourras annuler ce retour.",
+    "confirmAllTitle": "Tout annuler ?",
+    "confirmAllBody": "Les fichiers du projet reviendront à leur état d'avant la session. Tu pourras annuler ce retour.",
     "confirm": "Revenir",
     "cancel": "Annuler",
-    "restored": "Projet remis dans l'état de S{ordinal}. Un snapshot « avant retour » permet d'annuler.",
-    "unavailable": "git est introuvable : les snapshots sont désactivés.",
-    "none": "Les snapshots apparaissent quand Argos pilote la session.",
-    "files": "{count} f.",
-    "marker": "Snapshot S{ordinal}"
+    "restored": "Fichiers remis en état. « Annuler le retour » est dans le panneau D.",
+    "undone": "Retour annulé : les fichiers sont revenus comme avant.",
+    "truncated": "Trop de fichiers : seuls les 200 premiers sont listés.",
+    "reviewAll": "Revoir tout",
+    "restoreFile": "Annuler ce fichier",
+    "alsoOutside": "modifié aussi hors de l'agent",
+    "otherChanges": "Autres modifications · {count}",
+    "otherHint": "Fichiers modifiés hors des tours de l'agent : par toi entre deux tours, ou par une autre session.",
+    "confirmFileTitle": "Annuler les modifications de ce fichier ?",
+    "confirmFileBody": "{file} reviendra à son état {when}. Tu pourras annuler ce retour.",
+    "whenSessionStart": "d'avant la session",
+    "whenRangeStart": "au début de la plage affichée",
+    "fileRestored": "{file} remis en état. « Annuler le retour » est dans le panneau D.",
+    "twoSessions": "Une autre session travaille déjà dans ce projet : leurs modifications se mélangeront dans les tours."
   },
   "review": {
     "tabs": {
       "report": "Compte rendu",
       "review": "Review · {count} fichier | Review · {count} fichiers"
     },
-    "from": "De",
-    "to": "À",
-    "snapshot": "S{ordinal} · {kind}",
-    "noSnapshots": "La review compare deux snapshots : elle est disponible pour les sessions pilotées par Argos, après au moins un tour.",
-    "noChanges": "Aucune modification entre ces deux snapshots.",
+    "noSnapshots": "La review montre ce qu'un agent piloté par Argos a modifié : elle est disponible après un tour qui a modifié des fichiers.",
+    "noChanges": "Aucune modification sur cette plage.",
     "status": {
       "added": "ajouté",
       "modified": "modifié",
@@ -287,7 +300,19 @@
     "pending": "{count} commentaire à envoyer | {count} commentaires à envoyer",
     "send": "Envoyer à l'agent",
     "sentNotice": "Commentaires envoyés à l'agent.",
-    "lineTitle": "Ouvrir à la ligne {line}"
+    "lineTitle": "Ouvrir à la ligne {line}",
+    "range": "Comparer",
+    "ranges": {
+      "session": "Toute la session",
+      "since-review": "Depuis ma dernière review",
+      "turn": "Tour · {time} · {label}"
+    },
+    "markReviewed": "Marquer comme relu",
+    "markedNotice": "Marqué comme relu : la prochaine review peut partir d'ici.",
+    "nothingSinceReview": "Rien de nouveau depuis ta dernière review.",
+    "summary": "{count} fichier | {count} fichiers",
+    "otherChanges": "Autres modifications · {count}",
+    "otherHint": "Modifiées hors des tours de l'agent sur cette plage. Elles ne se commentent pas."
   },
   "notifications": {
     "permission": {

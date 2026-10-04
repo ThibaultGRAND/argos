@@ -22,6 +22,13 @@
       "when": 1791058957196,
       "tag": "0002_review_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1791105571064,
+      "tag": "0003_snapshot_labels",
+      "breakpoints": true
     }
   ]
 }
