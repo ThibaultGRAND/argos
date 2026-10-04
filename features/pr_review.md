@@ -1,6 +1,6 @@
 # F07 — Review façon PR
 
-**Statut** : à tester (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
+**Statut** : terminé (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
 **Version cible** : V1
 **Dépend de** : [agent_snapshots.md](agent_snapshots.md) (les diffs viennent des snapshots), [agent_sessions.md](agent_sessions.md) (renvoi à l'agent),
 [open_in_editor.md](open_in_editor.md) (ouvrir à la ligne)

@@ -1,6 +1,6 @@
 # F06 — Snapshots d'agent et retour en arrière
 
-**Statut** : à tester (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
+**Statut** : terminé (refonte du 2026-10-04 : [agent_changes.md](agent_changes.md))
 **Version cible** : V1
 **Dépend de** : [agent_sessions.md](agent_sessions.md), PLAN.md §2.4 (git fantôme)
 **Écrans** : panneau **E. Snapshots** et repères « SNAPSHOT S1 · ↺ revenir » dans le document (maquette 2a)

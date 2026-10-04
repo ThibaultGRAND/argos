@@ -515,8 +515,8 @@ Les versions cibles sont **validées** (voir §5).
 | F03 | Recherche plein texte | V0 | terminé | [features/full_text_search.md](features/full_text_search.md) |
 | F04 | Ouvrir dans l'éditeur (projet, fichier ; review en V1) | V0 | terminé | [features/open_in_editor.md](features/open_in_editor.md) |
 | F05 | Lancer et piloter une session d'agent | V1 | à tester | [features/agent_sessions.md](features/agent_sessions.md) |
-| F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | à tester (refonte) | [features/agent_changes.md](features/agent_changes.md), [origine](features/agent_snapshots.md) |
-| F07 | Review façon PR | V1 | à tester (refonte) | [features/agent_changes.md](features/agent_changes.md), [origine](features/pr_review.md) |
+| F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | terminé | [features/agent_changes.md](features/agent_changes.md), [origine](features/agent_snapshots.md) |
+| F07 | Review façon PR | V1 | terminé | [features/agent_changes.md](features/agent_changes.md), [origine](features/pr_review.md) |
 | F08 | Jauge de contexte et d'usage | V1 | à tester | [features/usage_gauge.md](features/usage_gauge.md) |
 | F09 | Distribution (builds 3 OS, GitHub Releases, mises à jour) | V1 | à définir | `features/distribution.md` |
 | F10 | Plan mode amélioré (plans comme objets, plan vs réalité) | V2 | à définir | `features/plan_mode.md` |
@@ -558,15 +558,16 @@ Les versions cibles sont **validées** (voir §5).
 ### V1 — Agir
 **Objectif** : lancer et relire mes sessions dans l'app au lieu du terminal.
 
-**Fonctionnalités** : F05 (Claude uniquement), F06, F07, F08, F09, F14 (version minimale)
+**Fonctionnalités** : F05 (Claude uniquement), F06, F07, F08, F09, F14 (version minimale), F17
 
 **Terminée quand** :
 - je lance, reprends et arrête une session Claude Code depuis l'app ;
-- chaque tour d'agent crée un snapshot, et j'annule n'importe quel tour ;
+- je vois ce que l'agent a modifié, séparé de mes propres modifications, et j'annule un fichier, un tour ou toute la session ;
 - je relis les changements comme une PR et je renvoie mes commentaires à l'agent ;
 - je vois le contexte utilisé et la consommation de quota ;
 - je suis notifié quand un agent attend une permission ou a terminé ;
-- un ami installe l'app depuis une GitHub Release sur son OS.
+- un ami installe l'app depuis une GitHub Release sur son OS ;
+- j'organise l'écran à ma façon : panneaux redimensionnables, déplaçables et masquables.
 
 ### V2 — Organiser
 **Objectif** : structurer le travail avec des plans et des consignes réutilisables.

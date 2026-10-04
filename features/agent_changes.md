@@ -1,6 +1,6 @@
 # F06 + F07 (refonte) — Modifications de l'agent : review et annulation
 
-**Statut** : à tester
+**Statut** : terminé (validé par Thibault le 2026-10-04)
 **Version cible** : V1
 **Remplace** : le comportement visible de [agent_snapshots.md](agent_snapshots.md) (F06) et de [pr_review.md](pr_review.md) (F07).
 Le git fantôme, les commentaires de review et l'envoi à l'agent sont conservés.
