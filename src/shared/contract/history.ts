@@ -44,6 +44,15 @@ export const SessionFileSchema = z.object({
 })
 export type SessionFileDto = z.infer<typeof SessionFileSchema>
 
+export const SessionUsageSchema = z.object({
+  contextTokens: z.number().int().nullable(),
+  inputTokens: z.number().int(),
+  outputTokens: z.number().int(),
+  cacheReadTokens: z.number().int(),
+  cacheCreationTokens: z.number().int(),
+})
+export type SessionUsageDto = z.infer<typeof SessionUsageSchema>
+
 export const SessionDetailSchema = SessionSummarySchema.extend({
   projectId: z.number().int(),
   projectName: z.string(),
@@ -52,6 +61,7 @@ export const SessionDetailSchema = SessionSummarySchema.extend({
   cliVersion: z.string().nullable(),
   toolCallCount: z.number().int(),
   files: z.array(SessionFileSchema),
+  usage: SessionUsageSchema,
 })
 export type SessionDetailDto = z.infer<typeof SessionDetailSchema>
 

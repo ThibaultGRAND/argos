@@ -16,6 +16,11 @@ export interface PermissionRequest {
   readonly target: string | null
 }
 
+export interface ModelContextWindow {
+  readonly model: string
+  readonly contextWindow: number
+}
+
 export type LiveEvent =
   | { readonly type: 'status'; readonly status: LiveStatus; readonly message?: string }
   | { readonly type: 'identified'; readonly sessionExternalId: string; readonly model: string | null }
@@ -29,6 +34,10 @@ export type LiveEvent =
   | { readonly type: 'permission-requested'; readonly request: PermissionRequest }
   | { readonly type: 'permission-resolved'; readonly requestId: string }
   | { readonly type: 'turn-completed'; readonly isError: boolean; readonly durationMs: number }
+  /** Contexte occupé après un appel de l'agent (F08). */
+  | { readonly type: 'usage'; readonly model: string | null; readonly contextTokens: number }
+  /** Taille exacte de la fenêtre de contexte de chaque modèle utilisé pendant le tour (F08). */
+  | { readonly type: 'context-windows'; readonly windows: readonly ModelContextWindow[] }
 
 /** Statut d'une session après un événement ; `undefined` si l'événement ne le change pas. */
 export function statusAfter(current: LiveStatus, event: LiveEvent): LiveStatus | undefined {

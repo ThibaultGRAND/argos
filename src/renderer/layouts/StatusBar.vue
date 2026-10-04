@@ -4,8 +4,10 @@ import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
 import { useAppStatusStore } from '../stores/app-status'
 import { useNoticesStore } from '../stores/notices'
+import ContextGauge from '../features/usage/ContextGauge.vue'
+import QuotaIndicator from '../features/usage/QuotaIndicator.vue'
 
-/** Barre d'état : indexeur, message bref de la dernière action, version. */
+/** Barre d'état : indexeur, message bref de la dernière action, contexte et quota (F08), version. */
 const { t, te } = useI18n()
 const { info, indexer } = storeToRefs(useAppStatusStore())
 const { current: notice } = storeToRefs(useNoticesStore())
@@ -34,6 +36,8 @@ const noticeText = computed(() => {
       {{ noticeText }}
     </span>
     <span class="status__spacer" />
+    <ContextGauge />
+    <QuotaIndicator />
     <span v-if="info" class="status__item">{{ t('status.version', { version: info.version }) }}</span>
   </footer>
 </template>

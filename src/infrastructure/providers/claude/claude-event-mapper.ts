@@ -1,5 +1,6 @@
 import type { FileChange, HistoryEvent } from '../../../core/domain/history/events'
 import type { ToolKind } from '../../../core/domain/history/tool-kind'
+import { contextTokensOf, type TokenUsage } from '../../../core/domain/usage/usage'
 
 /**
  * Conversion d'une ligne JSONL de Claude Code en événements normalisés (features/session_import.md).
@@ -158,7 +159,39 @@ function userText(raw: string): string | undefined {
 }
 
 function mapAssistant(entry: JsonRecord, timestamp: string): HistoryEvent[] {
-  return mapAssistantContent(entry['message'], asString(entry['uuid']) ?? `${timestamp}-assistant`, timestamp)
+  const events = mapAssistantContent(entry['message'], asString(entry['uuid']) ?? `${timestamp}-assistant`, timestamp)
+  const usage = usageOf(entry['message'])
+  const messageId = isRecord(entry['message']) ? asString(entry['message']['id']) : undefined
+  if (usage !== undefined && messageId !== undefined) {
+    events.push({
+      type: 'usage-reported',
+      messageId,
+      sidechain: entry['isSidechain'] === true,
+      occurredAt: timestamp,
+      ...usage,
+    })
+  }
+  return events
+}
+
+const asCount = (value: unknown): number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : 0
+
+/**
+ * Consommation d'un message de l'agent (format de l'API Messages), commune aux JSONL et à l'Agent SDK.
+ * `undefined` si absente ou vide (messages synthétiques de la CLI).
+ */
+export function usageOf(message: unknown): TokenUsage | undefined {
+  if (!isRecord(message)) return undefined
+  const usage = message['usage']
+  if (!isRecord(usage)) return undefined
+  const result: TokenUsage = {
+    inputTokens: asCount(usage['input_tokens']),
+    outputTokens: asCount(usage['output_tokens']),
+    cacheReadTokens: asCount(usage['cache_read_input_tokens']),
+    cacheCreationTokens: asCount(usage['cache_creation_input_tokens']),
+  }
+  return contextTokensOf(result) === 0 ? undefined : result
 }
 
 /**

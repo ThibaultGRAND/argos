@@ -15,6 +15,7 @@ import { LiveSessions, type LiveSessionsListener } from '../core/application/liv
 import { SnapshotService } from '../core/application/snapshots/snapshot-service'
 import { ReviewService } from '../core/application/review/review-service'
 import { NotificationService } from '../core/application/notifications/notification-service'
+import { UsageService } from '../core/application/usage/usage-service'
 import { resolveSessionTitle } from '../core/domain/history/session-title'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
@@ -28,6 +29,7 @@ import { GitShadowRepository } from '../infrastructure/git/git-shadow-repository
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
 import { ClaudeAgentRuntime } from '../infrastructure/providers/claude/claude-agent-runtime'
+import { ClaudeUsageProbe } from '../infrastructure/providers/claude/claude-usage-probe'
 import { findClaudeExecutable } from '../infrastructure/system/claude-executable'
 import { resolveClaudeProjectsDirectory } from '../infrastructure/system/claude-paths'
 import { ElectronEditorLauncher } from './adapters/electron-editor-launcher'
@@ -37,12 +39,15 @@ import { ElectronAppPresence, ElectronNotifier } from './adapters/electron-notif
 import { IntlifyTranslator } from './adapters/intlify-translator'
 import type { RequestHandlers } from './ipc/register'
 import type { Snapshot } from '../core/domain/snapshots/snapshot'
-import type { ReviewCommentDto, SnapshotDto } from '../shared/contract'
+import type { PlanQuotaDto, ReviewCommentDto, SnapshotDto } from '../shared/contract'
+import { isQuotaWarning, type PlanQuota } from '../core/domain/usage/usage'
 import type { ReviewComment } from '../core/domain/review/review-comment'
 import type { AppPaths } from './paths'
 
 export interface Composition {
   readonly handlers: RequestHandlers
+  /** Relit le quota de l'abonnement (au plus une fois par minute) : démarrage, retour au premier plan, minuterie. */
+  refreshQuota(): void
   dispose(): void
 }
 
@@ -55,6 +60,7 @@ export interface CompositionContext {
   readonly onSnapshotsChanged: (sessionExternalId: string) => void
   /** Ramène Argos au premier plan sur une session (clic sur une notification). */
   readonly openSession: (sessionId: number | null) => void
+  readonly onQuota: (quota: PlanQuotaDto) => void
   readonly log: (message: string) => void
 }
 
@@ -66,6 +72,7 @@ export function compose({
   liveListener,
   onSnapshotsChanged,
   openSession,
+  onQuota,
   log,
 }: CompositionContext): Composition {
   const argosDb = openArgosDatabase({
@@ -107,6 +114,12 @@ export function compose({
 
   const executable = findClaudeExecutable(environment)
   log(executable === undefined ? 'CLI claude introuvable : binaire du SDK utilisé' : `CLI claude : ${executable}`)
+  const usageService = new UsageService({
+    probe: new ClaudeUsageProbe({ executable, environment }),
+    now: () => new Date(),
+    onQuota: (quota) => onQuota(toQuotaDto(quota)),
+    log,
+  })
   const shadow = new GitShadowRepository({ root: paths.shadowGit, environment })
   const snapshotRepository = new SqliteSnapshotRepository(argosDb.database)
   const snapshotService = new SnapshotService({
@@ -124,6 +137,9 @@ export function compose({
       onEvent: (runId, event) => {
         liveListener.onEvent(runId, event)
         void notificationService.onLiveEvent(runId, event)
+        if (event.type === 'context-windows') {
+          for (const { model, contextWindow } of event.windows) usageService.rememberContextWindow(model, contextWindow)
+        }
         if (event.type === 'identified') {
           snapshotService.identified(runId, event.sessionExternalId)
           // Dès que la session a un identifiant, son fichier existe : l'import la fait apparaître dans la liste.
@@ -134,6 +150,7 @@ export function compose({
       onTurnCompleted: (runId) => {
         void snapshotService.afterTurn(runId)
         indexer.requestImport()
+        void usageService.refreshQuota()
       },
     },
     randomUUID,
@@ -268,6 +285,12 @@ export function compose({
     'sessions.findByExternal': ({ externalId }) => ({
       sessionId: sessionQueries.findSessionIdByExternal(externalId) ?? null,
     }),
+    'usage.quota': () => {
+      void usageService.refreshQuota()
+      const quota = usageService.currentQuota()
+      return { quota: quota === null ? null : toQuotaDto(quota) }
+    },
+    'usage.contextGauge': ({ model, tokens }) => usageService.gauge(model, tokens),
     'links.open': async ({ url }) => {
       await openExternalLink.execute(url)
       return undefined
@@ -276,6 +299,7 @@ export function compose({
 
   return {
     handlers,
+    refreshQuota: () => void usageService.refreshQuota(),
     dispose: () => {
       liveSessions.stopAll()
       sessionQueries.close()
@@ -304,6 +328,14 @@ function toSnapshotDto(snapshot: Snapshot): SnapshotDto {
     linesAdded: snapshot.linesAdded,
     linesRemoved: snapshot.linesRemoved,
     createdAt: snapshot.createdAt,
+  }
+}
+
+/** Les tableaux du domaine sont en lecture seule ; le contrat IPC attend des tableaux modifiables. */
+function toQuotaDto(quota: PlanQuota): PlanQuotaDto {
+  return {
+    fetchedAt: quota.fetchedAt,
+    windows: quota.windows.map((window) => ({ ...window, warning: isQuotaWarning(window) })),
   }
 }
 

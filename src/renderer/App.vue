@@ -12,6 +12,7 @@ import { useSnapshotsStore } from './stores/snapshots'
 import { useReviewStore } from './stores/review'
 import { useSessionStore } from './stores/session'
 import { usePreferencesStore } from './stores/preferences'
+import { useUsageStore } from './stores/usage'
 
 const appStatus = useAppStatusStore()
 const preferences = usePreferencesStore()
@@ -22,6 +23,7 @@ const router = useRouter()
 const live = useLiveStore()
 const snapshots = useSnapshotsStore()
 const review = useReviewStore()
+const usage = useUsageStore()
 const ready = ref(false)
 
 const macos = computed(() => appStatus.info?.platform === 'darwin')
@@ -55,6 +57,7 @@ onMounted(async () => {
   await Promise.all([preferences.load(), appStatus.load()])
   history.watchIndex()
   await live.load()
+  await usage.load()
   snapshots.watchUpdates()
   review.watchSnapshots()
   // Clic sur une notification : ouvre la session concernée (F14).

@@ -1,3 +1,4 @@
+import type { TokenUsage } from '../usage/usage'
 import type { ToolKind } from './tool-kind'
 
 /**
@@ -59,4 +60,17 @@ export interface ToolResult {
   readonly occurredAt: string
 }
 
-export type HistoryEvent = SessionObserved | TitleChanged | UserMessage | AssistantMessage | ToolCall | ToolResult
+/**
+ * Consommation d'un appel au modèle (F08). Une même réponse peut être écrite sur plusieurs lignes :
+ * `messageId` permet de ne la compter qu'une fois.
+ */
+export interface UsageReported extends TokenUsage {
+  readonly type: 'usage-reported'
+  readonly messageId: string
+  /** Vrai pour un appel d'un sous-agent : compté dans les totaux, pas dans le contexte de la session. */
+  readonly sidechain: boolean
+  readonly occurredAt: string
+}
+
+export type HistoryEvent =
+  SessionObserved | TitleChanged | UserMessage | AssistantMessage | ToolCall | ToolResult | UsageReported

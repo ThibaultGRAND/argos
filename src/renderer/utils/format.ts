@@ -75,3 +75,20 @@ export function joinProjectPath(projectPath: string, relativePath: string): stri
   const base = projectPath.endsWith(separator) ? projectPath.slice(0, -1) : projectPath
   return `${base}${separator}${relativePath.split('/').join(separator)}`
 }
+
+/** Nombre de tokens compact selon la langue : « 130 k », « 12,3 M » (en : « 130K », « 12.3M »). */
+export function formatTokens(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { notation: 'compact', maximumSignificantDigits: 3 }).format(value)
+}
+
+/** Moment d'une réinitialisation : l'heure si c'est aujourd'hui, sinon le jour et l'heure. */
+export function formatReset(iso: string, locale: string, now: Date = new Date()): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+  const sameDay = startOfDay(date) === startOfDay(now)
+  return new Intl.DateTimeFormat(locale, {
+    ...(sameDay ? {} : { weekday: 'short', day: 'numeric' }),
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}

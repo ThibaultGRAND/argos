@@ -37,6 +37,8 @@ export interface LiveRunView {
   items: LiveItem[]
   /** Numéro du tour en cours ; les tours précédents sont terminés. */
   turn: number
+  /** Contexte occupé après le dernier appel de l'agent (F08) ; `null` avant le premier appel. */
+  context: { readonly model: string | null; readonly tokens: number } | null
 }
 
 /** Statuts pendant lesquels l'agent travaille ou attend : l'historique de la session est figé. */
@@ -76,6 +78,7 @@ export const useLiveStore = defineStore('live', () => {
       pendingPermissions: [...summary.pendingPermissions],
       items: [],
       turn: 0,
+      context: null,
     }
     runs.value.push(run)
     const adopted = byRunId(summary.runId) ?? run
@@ -183,6 +186,9 @@ export const useLiveStore = defineStore('live', () => {
       case 'turn-completed':
         run.status = event.isError ? 'error' : 'idle'
         run.turn += 1
+        break
+      case 'usage':
+        run.context = { model: event.model, tokens: event.contextTokens }
         break
     }
   }

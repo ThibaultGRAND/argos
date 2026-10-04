@@ -36,6 +36,13 @@ export class GetSessionDetail {
       cliVersion: row.cliVersion,
       toolCallCount: row.toolCallCount,
       files: this.queries.listSessionFiles(sessionId),
+      usage: {
+        contextTokens: row.contextTokens,
+        inputTokens: row.inputTokens,
+        outputTokens: row.outputTokens,
+        cacheReadTokens: row.cacheReadTokens,
+        cacheCreationTokens: row.cacheCreationTokens,
+      },
     }
   }
 }

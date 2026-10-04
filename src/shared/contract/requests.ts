@@ -25,6 +25,7 @@ import {
 } from './live'
 import { SnapshotListSchema, SnapshotSchema } from './snapshots'
 import { NewReviewCommentSchema, ReviewCommentSchema, ReviewDiffSchema } from './review'
+import { ContextGaugeInputSchema, ContextGaugeSchema, QuotaOutputSchema } from './usage'
 
 interface RequestDefinition {
   readonly input: z.ZodType
@@ -71,6 +72,8 @@ export const requests = {
     input: z.object({ sessionId: z.number().int(), sessionExternalId: z.string() }),
     output: z.object({ runId: z.string(), sent: z.number().int() }),
   },
+  'usage.quota': { input: z.undefined(), output: QuotaOutputSchema },
+  'usage.contextGauge': { input: ContextGaugeInputSchema, output: ContextGaugeSchema },
   'search.query': { input: SearchInputSchema, output: SearchResultsSchema },
   'links.open': { input: z.object({ url: z.string().max(4096) }), output: z.undefined() },
 } as const satisfies Record<RequestName, RequestDefinition>

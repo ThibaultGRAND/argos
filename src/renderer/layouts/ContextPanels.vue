@@ -8,13 +8,15 @@ import { usePreferencesStore } from '../stores/preferences'
 import { useSessionStore } from '../stores/session'
 import SnapshotList from '../features/snapshots/SnapshotList.vue'
 import UiMarker from '../ui/UiMarker.vue'
-import { formatDateTime, formatDuration, formatModel, relativeToProject } from '../utils/format'
+import { useContextText } from '../features/usage/context-text'
+import { formatDateTime, formatDuration, formatModel, formatTokens, relativeToProject } from '../utils/format'
 
 /** Colonne de droite 2a : D. Fichiers, E. Snapshots (V1), F. Fiche de la session ouverte. */
 const { detail } = storeToRefs(useSessionStore())
 const { t, locale } = useI18n()
 const notices = useNoticesStore()
 const { preferences } = storeToRefs(usePreferencesStore())
+const contextText = useContextText()
 
 function openFile(path: string): void {
   void notices.attempt(() => openInEditor(path))
@@ -35,6 +37,18 @@ const sheet = computed(() => {
     ['duration', formatDuration(session.startedAt, session.lastActivityAt)],
     ['messages', session.messageCount.toLocaleString(locale.value)],
     ['toolCalls', session.toolCallCount.toLocaleString(locale.value)],
+    ['context', contextText.value ?? '—'],
+    [
+      'inputTokens',
+      t('usage.withCache', {
+        total: formatTokens(
+          session.usage.inputTokens + session.usage.cacheReadTokens + session.usage.cacheCreationTokens,
+          locale.value,
+        ),
+        cache: formatTokens(session.usage.cacheReadTokens, locale.value),
+      }),
+    ],
+    ['outputTokens', formatTokens(session.usage.outputTokens, locale.value)],
     ['identifier', session.externalId],
   ] as const
 })

@@ -4,6 +4,7 @@ import type { HistoryEvent } from '../../../core/domain/history/events'
 import type { ImportCursor, SourceFile } from '../../../core/domain/history/history-source'
 import type { ProviderId } from '../../../core/domain/history/provider'
 import { excerpt } from '../../../core/domain/history/session-title'
+import { contextTokensOf } from '../../../core/domain/usage/usage'
 import type { ApplyResult, HistoryIndex } from '../../../core/domain/ports/history-index'
 import type { IndexDatabase } from './index-database'
 import { fileChanges, importCursors, messages, projects, sessions, toolCalls } from './schema'
@@ -65,6 +66,12 @@ class ChunkProjection {
   private linesAddedDelta = 0
   private linesRemovedDelta = 0
   private touchedFiles = false
+  private lastUsageMessageId: string | null = null
+  private contextTokens: number | undefined
+  private inputDelta = 0
+  private outputDelta = 0
+  private cacheReadDelta = 0
+  private cacheCreationDelta = 0
 
   constructor(
     private readonly tx: Transaction,
@@ -75,6 +82,11 @@ class ChunkProjection {
       .from(sessions)
       .where(and(eq(sessions.providerId, file.providerId), eq(sessions.externalId, file.sessionExternalId)))
       .get()?.id
+    if (this.sessionId !== undefined) {
+      this.lastUsageMessageId =
+        tx.select({ id: sessions.lastUsageMessageId }).from(sessions).where(eq(sessions.id, this.sessionId)).get()
+          ?.id ?? null
+    }
     this.nextSeq =
       tx
         .select({ nextSeq: importCursors.nextSeq })
@@ -177,6 +189,16 @@ class ChunkProjection {
           this.touch(event.occurredAt)
           break
         }
+        case 'usage-reported':
+          // Les lignes d'une même réponse se suivent et répètent la même consommation.
+          if (event.messageId === this.lastUsageMessageId) break
+          this.lastUsageMessageId = event.messageId
+          this.inputDelta += event.inputTokens
+          this.outputDelta += event.outputTokens
+          this.cacheReadDelta += event.cacheReadTokens
+          this.cacheCreationDelta += event.cacheCreationTokens
+          if (!event.sidechain) this.contextTokens = contextTokensOf(event)
+          break
       }
     }
 
@@ -248,6 +270,12 @@ class ChunkProjection {
         linesAdded: sql`${sessions.linesAdded} + ${this.linesAddedDelta}`,
         linesRemoved: sql`${sessions.linesRemoved} + ${this.linesRemovedDelta}`,
         ...(filesChanged === undefined ? {} : { filesChanged }),
+        inputTokens: sql`${sessions.inputTokens} + ${this.inputDelta}`,
+        outputTokens: sql`${sessions.outputTokens} + ${this.outputDelta}`,
+        cacheReadTokens: sql`${sessions.cacheReadTokens} + ${this.cacheReadDelta}`,
+        cacheCreationTokens: sql`${sessions.cacheCreationTokens} + ${this.cacheCreationDelta}`,
+        lastUsageMessageId: this.lastUsageMessageId,
+        ...(this.contextTokens === undefined ? {} : { contextTokens: this.contextTokens }),
         ...(this.lastActivityAt === undefined
           ? {}
           : { lastActivityAt: sql`max(${sessions.lastActivityAt}, ${this.lastActivityAt})` }),

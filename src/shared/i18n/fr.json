@@ -84,7 +84,10 @@
       "duration": "Durée",
       "messages": "Messages",
       "toolCalls": "Appels d'outils",
-      "identifier": "Identifiant"
+      "identifier": "Identifiant",
+      "context": "Contexte",
+      "inputTokens": "Tokens en entrée",
+      "outputTokens": "Tokens en sortie"
     }
   },
   "status": {
@@ -298,6 +301,25 @@
     "error": {
       "title": "Session en erreur",
       "body": "{session} : l'agent s'est arrêté sur une erreur."
+    }
+  },
+  "usage": {
+    "context": "Contexte",
+    "contextValue": "{used} / {window} · {percent} %",
+    "contextTitle": "Contexte de la session : {used} tokens sur une fenêtre de {window}. Au-delà, l'agent résume la conversation.",
+    "contextTitleUnknown": "Contexte de la session : {used} tokens (taille de la fenêtre inconnue).",
+    "withCache": "{total} (cache {cache})",
+    "quota": {
+      "session": "5 h",
+      "weekly": "7 j",
+      "title": "Limites de l'abonnement",
+      "line": "{name} : {percent} % utilisés{reset}",
+      "reset": ", réinitialisation {when}",
+      "names": {
+        "session": "Fenêtre de 5 heures",
+        "weekly": "Semaine",
+        "weekly-model": "Semaine, {model}"
+      }
     }
   }
 }

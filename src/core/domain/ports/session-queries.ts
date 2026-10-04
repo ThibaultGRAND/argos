@@ -33,6 +33,11 @@ export interface SessionDetailRow extends SessionRow {
   readonly gitBranch: string | null
   readonly cliVersion: string | null
   readonly toolCallCount: number
+  readonly contextTokens: number | null
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly cacheReadTokens: number
+  readonly cacheCreationTokens: number
 }
 
 export interface SessionFileRow {

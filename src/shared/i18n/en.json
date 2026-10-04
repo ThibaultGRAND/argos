@@ -84,7 +84,10 @@
       "duration": "Duration",
       "messages": "Messages",
       "toolCalls": "Tool calls",
-      "identifier": "Identifier"
+      "identifier": "Identifier",
+      "context": "Context",
+      "inputTokens": "Input tokens",
+      "outputTokens": "Output tokens"
     }
   },
   "status": {
@@ -298,6 +301,25 @@
     "error": {
       "title": "Session error",
       "body": "{session}: the agent stopped on an error."
+    }
+  },
+  "usage": {
+    "context": "Context",
+    "contextValue": "{used} / {window} · {percent}%",
+    "contextTitle": "Session context: {used} tokens out of a {window} window. Beyond it, the agent summarizes the conversation.",
+    "contextTitleUnknown": "Session context: {used} tokens (window size unknown).",
+    "withCache": "{total} (cache {cache})",
+    "quota": {
+      "session": "5h",
+      "weekly": "7d",
+      "title": "Plan limits",
+      "line": "{name}: {percent}% used{reset}",
+      "reset": ", resets {when}",
+      "names": {
+        "session": "5-hour window",
+        "weekly": "Week",
+        "weekly-model": "Week, {model}"
+      }
     }
   }
 }

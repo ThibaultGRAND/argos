@@ -24,6 +24,8 @@ if (!app.requestSingleInstanceLock()) {
 
 let composition: Composition | undefined
 let indexer: IndexerSupervisor | undefined
+let quotaTimer: NodeJS.Timeout | undefined
+const QUOTA_REFRESH_MS = 5 * 60_000
 
 app.whenReady().then(
   async () => {
@@ -46,6 +48,7 @@ app.whenReady().then(
       environment,
       liveListener: { onEvent: (runId, event) => broadcast('live.event', { runId, event: toLiveEventDto(event) }) },
       onSnapshotsChanged: (sessionExternalId) => broadcast('snapshots.updated', { sessionExternalId }),
+      onQuota: (quota) => broadcast('usage.quota', quota),
       openSession: (sessionId) => {
         const [window] = BrowserWindow.getAllWindows()
         if (window !== undefined) {
@@ -61,6 +64,12 @@ app.whenReady().then(
     indexer.start()
 
     createMainWindow()
+    // Quota de l'abonnement (F08) : au démarrage, au retour au premier plan et toutes les 5 minutes si Argos est au premier plan.
+    composition.refreshQuota()
+    app.on('browser-window-focus', () => composition?.refreshQuota())
+    quotaTimer = setInterval(() => {
+      if (BrowserWindow.getFocusedWindow() !== null) composition?.refreshQuota()
+    }, QUOTA_REFRESH_MS)
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
     })
@@ -82,11 +91,14 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  clearInterval(quotaTimer)
   indexer?.stop()
   composition?.dispose()
 })
 
 /** Les événements du domaine sont en lecture seule ; le contrat IPC attend des tableaux modifiables. */
 function toLiveEventDto(event: LiveEvent): LiveEventDto {
-  return event.type === 'tool-result' ? { ...event, fileChanges: [...event.fileChanges] } : event
+  if (event.type === 'tool-result') return { ...event, fileChanges: [...event.fileChanges] }
+  if (event.type === 'context-windows') return { ...event, windows: [...event.windows] }
+  return event
 }

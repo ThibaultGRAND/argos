@@ -33,6 +33,16 @@ export interface SessionFile {
   readonly changes: number
 }
 
+/** Consommation d'une session (F08). */
+export interface SessionUsage {
+  /** Contexte occupé après le dernier appel du fil principal ; `null` si inconnu. */
+  readonly contextTokens: number | null
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly cacheReadTokens: number
+  readonly cacheCreationTokens: number
+}
+
 /** Fiche complète d'une session, pour le compte rendu (F02). */
 export interface SessionDetail extends SessionSummary {
   readonly projectId: number
@@ -42,6 +52,7 @@ export interface SessionDetail extends SessionSummary {
   readonly cliVersion: string | null
   readonly toolCallCount: number
   readonly files: readonly SessionFile[]
+  readonly usage: SessionUsage
 }
 
 export interface MessageEntry {

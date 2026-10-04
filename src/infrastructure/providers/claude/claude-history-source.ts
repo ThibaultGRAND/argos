@@ -14,7 +14,8 @@ const CHUNK_BYTES = 4 * 1024 * 1024
  */
 export class ClaudeHistorySource implements HistorySource {
   readonly providerId = 'claude' as const
-  readonly parserVersion = 1
+  /** 2 : consommation des appels (F08). Changer la version réimporte tout l'historique. */
+  readonly parserVersion = 2
 
   constructor(private readonly projectsDirectory: string) {}
 

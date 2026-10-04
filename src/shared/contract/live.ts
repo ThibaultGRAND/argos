@@ -42,6 +42,11 @@ export const LiveEventSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('permission-requested'), request: PermissionRequestSchema }),
   z.object({ type: z.literal('permission-resolved'), requestId: z.string() }),
   z.object({ type: z.literal('turn-completed'), isError: z.boolean(), durationMs: z.number() }),
+  z.object({ type: z.literal('usage'), model: z.string().nullable(), contextTokens: z.number().int() }),
+  z.object({
+    type: z.literal('context-windows'),
+    windows: z.array(z.object({ model: z.string(), contextWindow: z.number().int() })),
+  }),
 ])
 export type LiveEventDto = z.infer<typeof LiveEventSchema>
 

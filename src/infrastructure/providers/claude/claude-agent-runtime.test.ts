@@ -77,4 +77,37 @@ describe('toLiveEvents', () => {
       ),
     ).toEqual([])
   })
+
+  it('transmet le contexte de chaque appel et la taille exacte des fenêtres en fin de tour (F08)', () => {
+    const events = toLiveEvents(
+      sdk({
+        type: 'assistant',
+        uuid: 'u',
+        parent_tool_use_id: null,
+        message: {
+          id: 'm',
+          model: 'claude-opus-5-5',
+          content: [],
+          usage: { input_tokens: 2, cache_read_input_tokens: 1000, cache_creation_input_tokens: 10, output_tokens: 5 },
+        },
+      }),
+      'm',
+    )
+    expect(events).toEqual([{ type: 'usage', model: 'claude-opus-5-5', contextTokens: 1017 }])
+    expect(
+      toLiveEvents(
+        sdk({
+          type: 'result',
+          subtype: 'success',
+          is_error: false,
+          duration_ms: 10,
+          modelUsage: { 'claude-opus-5-5': { contextWindow: 1_000_000 }, 'claude-haiku-4-5': { contextWindow: 0 } },
+        }),
+        undefined,
+      ),
+    ).toEqual([
+      { type: 'context-windows', windows: [{ model: 'claude-opus-5-5', contextWindow: 1_000_000 }] },
+      { type: 'turn-completed', isError: false, durationMs: 10 },
+    ])
+  })
 })

@@ -31,6 +31,8 @@ export const requestNames = [
   'review.comments.add',
   'review.comments.delete',
   'review.send',
+  'usage.quota',
+  'usage.contextGauge',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 
@@ -40,6 +42,7 @@ export const eventNames = [
   'live.event',
   'snapshots.updated',
   'app.navigate',
+  'usage.quota',
 ] as const
 export type EventName = (typeof eventNames)[number]
 

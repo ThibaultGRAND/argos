@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, formatModel, formatWhen, relativeToProject, shortenPath } from './format'
+import {
+  formatDuration,
+  formatModel,
+  formatReset,
+  formatTokens,
+  formatWhen,
+  relativeToProject,
+  shortenPath,
+} from './format'
 
 describe('formatModel', () => {
   it('rend les modèles Claude lisibles', () => {
@@ -44,5 +52,23 @@ describe('relativeToProject', () => {
     expect(relativeToProject('/p/site/src/a.ts', '/p/site')).toBe('src/a.ts')
     expect(relativeToProject('C:\\p\\site\\a.ts', 'C:\\p\\site')).toBe('a.ts')
     expect(relativeToProject('/ailleurs/b.ts', '/p/site')).toBe('/ailleurs/b.ts')
+  })
+})
+
+describe('formatTokens', () => {
+  it('compacte les nombres selon la langue', () => {
+    expect(formatTokens(130_135, 'en')).toBe('130K')
+    expect(formatTokens(12_345_678, 'en')).toBe('12.3M')
+    expect(formatTokens(1_000_000, 'en')).toBe('1M')
+    expect(formatTokens(950, 'fr')).toBe('950')
+    expect(formatTokens(1_000_000, 'fr').replace(/\s/g, ' ')).toBe('1 M')
+  })
+})
+
+describe('formatReset', () => {
+  const now = new Date(2026, 9, 4, 10, 0)
+  it('donne l’heure seule le jour même, sinon le jour et l’heure', () => {
+    expect(formatReset(new Date(2026, 9, 4, 14, 39).toISOString(), 'fr', now)).toBe('14:39')
+    expect(formatReset(new Date(2026, 9, 6, 23, 59).toISOString(), 'fr', now)).toMatch(/mar\.? 6.*23:59/)
   })
 })

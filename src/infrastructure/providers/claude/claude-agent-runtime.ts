@@ -11,7 +11,8 @@ import type { HistoryEvent } from '../../../core/domain/history/events'
 import type { LiveEvent, PermissionDecision } from '../../../core/domain/live/live-events'
 import type { AgentRuntime, LiveRun, LiveRunOptions } from '../../../core/domain/ports/agent-runtime'
 import { AsyncQueue } from './async-queue'
-import { mapAssistantContent, toolResult } from './claude-event-mapper'
+import { mapAssistantContent, toolResult, usageOf } from './claude-event-mapper'
+import { contextTokensOf } from '../../../core/domain/usage/usage'
 
 export interface ClaudeRuntimeConfig {
   /** CLI `claude` installée ; à défaut, le SDK utilise son propre binaire. */
@@ -162,13 +163,19 @@ export function toLiveEvents(message: SDKMessage, currentMessageId: string | und
     case 'assistant': {
       if (message.parent_tool_use_id !== null) return []
       const messageId = message.message.id
-      return mapAssistantContent(message.message, message.uuid, now()).flatMap((event): LiveEvent[] =>
+      const events = mapAssistantContent(message.message, message.uuid, now()).flatMap((event): LiveEvent[] =>
         event.type === 'assistant-message'
           ? [{ type: 'assistant-text', messageId, text: event.text, occurredAt: event.occurredAt }]
           : event.type === 'tool-call'
             ? [event]
             : [],
       )
+      const usage = usageOf(message.message)
+      if (usage !== undefined) {
+        const model = typeof message.message.model === 'string' ? message.message.model : null
+        events.push({ type: 'usage', model, contextTokens: contextTokensOf(usage) })
+      }
+      return events
     }
     case 'user': {
       if (message.parent_tool_use_id !== null) return []
@@ -179,14 +186,21 @@ export function toLiveEvents(message: SDKMessage, currentMessageId: string | und
         return result?.type === 'tool-result' ? [result] : []
       })
     }
-    case 'result':
+    case 'result': {
+      const windows = Object.entries(message.modelUsage ?? {}).flatMap(([model, usage]) =>
+        typeof usage.contextWindow === 'number' && usage.contextWindow > 0
+          ? [{ model, contextWindow: usage.contextWindow }]
+          : [],
+      )
       return [
+        ...(windows.length > 0 ? [{ type: 'context-windows' as const, windows }] : []),
         {
           type: 'turn-completed',
           isError: message.subtype !== 'success' || message.is_error,
           durationMs: message.duration_ms,
         },
       ]
+    }
     default:
       return []
   }

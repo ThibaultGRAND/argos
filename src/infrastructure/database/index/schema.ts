@@ -45,6 +45,14 @@ export const sessions = sqliteTable(
     filesChanged: integer('files_changed').notNull().default(0),
     linesAdded: integer('lines_added').notNull().default(0),
     linesRemoved: integer('lines_removed').notNull().default(0),
+    // Consommation (F08) : contexte du dernier appel du fil principal, totaux de la session.
+    contextTokens: integer('context_tokens'),
+    inputTokens: integer('input_tokens').notNull().default(0),
+    outputTokens: integer('output_tokens').notNull().default(0),
+    cacheReadTokens: integer('cache_read_tokens').notNull().default(0),
+    cacheCreationTokens: integer('cache_creation_tokens').notNull().default(0),
+    /** Dernier appel compté : une réponse est écrite sur plusieurs lignes avec la même consommation. */
+    lastUsageMessageId: text('last_usage_message_id'),
     ...timestamps,
   },
   (table) => [

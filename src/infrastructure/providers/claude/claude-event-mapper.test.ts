@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest'
 import type { HistoryEvent } from '../../../core/domain/history/events'
 import { ClaudeEventMapper } from './claude-event-mapper'
 
-const fixture = resolve(__dirname, '../../../../tests/fixtures/claude/2.1.284/session-basique.jsonl')
+const fixtures = resolve(__dirname, '../../../../tests/fixtures/claude/2.1.284')
 
-function mapFixture(): { events: HistoryEvent[]; ignored: number } {
+function mapFixture(name = 'session-basique.jsonl'): { events: HistoryEvent[]; ignored: number } {
+  const fixture = resolve(fixtures, name)
   const mapper = new ClaudeEventMapper()
   const events: HistoryEvent[] = []
   let ignored = 0
@@ -82,5 +83,29 @@ describe('ClaudeEventMapper', () => {
       { type: 'title-changed', source: 'custom', title: '404 cours collectifs' },
     ])
     expect(ignored).toBeGreaterThanOrEqual(5)
+  })
+})
+
+describe('ClaudeEventMapper — consommation (F08)', () => {
+  const { events } = mapFixture('session-usage.jsonl')
+  const usage = events.flatMap((event) => (event.type === 'usage-reported' ? [event] : []))
+
+  it('émet la consommation de chaque ligne, avec l’identifiant de l’appel et le fil', () => {
+    expect(usage.map((event) => [event.messageId, event.sidechain])).toEqual([
+      ['m1', false],
+      ['m1', false],
+      ['m-side', true],
+      ['m2', false],
+    ])
+    expect(usage[3]).toMatchObject({
+      inputTokens: 1,
+      cacheCreationTokens: 1500,
+      cacheReadTokens: 23100,
+      outputTokens: 400,
+    })
+  })
+
+  it('ignore la consommation vide des messages synthétiques', () => {
+    expect(usage.some((event) => event.messageId === 'm3')).toBe(false)
   })
 })

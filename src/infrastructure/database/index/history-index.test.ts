@@ -163,4 +163,21 @@ describe('import de l’historique Claude dans index.db', () => {
     await importer().execute()
     expect(queries().listProjects()).toHaveLength(1)
   })
+
+  it('enregistre la consommation sans compter deux fois une réponse écrite sur plusieurs lignes (F08)', async () => {
+    copyFileSync(
+      resolve(__dirname, '../../../../tests/fixtures/claude/2.1.284/session-usage.jsonl'),
+      join(projectsDirectory, '-projets-site-esf', 's-2.jsonl'),
+    )
+    await importer().execute()
+    const sessionId = queries().findSessionIdByExternal('s-2') ?? -1
+    expect(new GetSessionDetail(queries()).execute(sessionId).usage).toEqual({
+      // Dernier appel du fil principal (m2) : le sous-agent et le message synthétique n'y entrent pas.
+      contextTokens: 1 + 1500 + 23100 + 400,
+      inputTokens: 2 + 500 + 1,
+      outputTokens: 100 + 50 + 400,
+      cacheReadTokens: 20000 + 23100,
+      cacheCreationTokens: 3000 + 1500,
+    })
+  })
 })
