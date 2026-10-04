@@ -12,7 +12,7 @@ const { quota } = storeToRefs(useUsageStore())
 
 /** Toujours la fenêtre de 5 heures et la semaine ; une fenêtre propre à un modèle seulement si elle alerte. */
 const shown = computed(() =>
-  (quota.value?.windows ?? []).filter((window) => window.kind !== 'weekly-model' || window.warning),
+  (quota.value?.windows ?? []).filter((window) => window.kind !== 'weekly-model' || window.level === 'warning'),
 )
 
 const shortName = (window: QuotaWindowDto): string =>
@@ -39,7 +39,7 @@ const title = computed(() =>
       v-for="window in shown"
       :key="`${window.kind}-${window.label}`"
       class="quota__window"
-      :class="{ 'quota__window--warning': window.warning }"
+      :class="`quota__window--${window.level}`"
     >
       {{ shortName(window) }} {{ window.utilization }}&nbsp;%
     </span>
@@ -50,6 +50,10 @@ const title = computed(() =>
 .quota {
   display: inline-flex;
   gap: 10px;
+}
+
+.quota__window--caution {
+  color: var(--caution);
 }
 
 .quota__window--warning {

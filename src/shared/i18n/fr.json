@@ -320,6 +320,29 @@
         "weekly": "Semaine",
         "weekly-model": "Semaine, {model}"
       }
+    },
+    "detailTitle": "Contexte · {model}",
+    "autoCompact": "Compactage automatique vers {tokens} ({percent} %)",
+    "autoCompactOff": "Compactage automatique désactivé",
+    "breakdownLoading": "Analyse du contexte…",
+    "breakdownUnavailable": "Le détail par catégorie n'est visible que pendant qu'Argos pilote la session.",
+    "breakdownFailed": "Détail indisponible pour le moment.",
+    "memoryFiles": "Fichiers mémoire",
+    "sessionTotals": "Toute la session",
+    "close": "Fermer",
+    "openDetail": "Voir le détail du contexte",
+    "categories": {
+      "system-prompt": "Instructions système",
+      "system-tools": "Outils",
+      "mcp-tools": "Outils MCP",
+      "mcp-instructions": "Instructions MCP",
+      "agents": "Agents",
+      "memory": "Fichiers mémoire",
+      "skills": "Skills",
+      "messages": "Messages",
+      "buffer": "Réserve du compactage",
+      "free": "Libre",
+      "other": "{label}"
     }
   }
 }

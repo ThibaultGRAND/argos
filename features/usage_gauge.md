@@ -13,9 +13,13 @@ ni où on en est de son abonnement (fenêtre de 5 heures, semaine) avant d'être
 ## Comportement attendu
 - **Barre d'état, à droite** :
   - **Contexte** de la session ouverte : petite barre, `13 % · 130 k / 1 M`. Mise à jour en direct pendant un tour.
-    Accent brique à partir de 80 %. Sans session ouverte ou sans donnée : masqué.
+    **Couleur** : neutre, **ocre** à partir de 50 % (vigilance), **brique** à partir de 80 %. Sans session ouverte ou sans donnée : masqué.
+  - **Clic sur la jauge** : fenêtre de détail (modèle, total, seuil du compactage automatique, totaux de la session).
+    Pour une session pilotée par Argos : barre empilée et liste par catégorie (instructions système, outils, MCP, fichiers mémoire,
+    skills, messages, réserve du compactage, libre) et fichiers mémoire (CLAUDE.md). Pour une session terminée, une phrase explique
+    que le découpage n'est visible qu'en direct.
   - **Quota de l'abonnement** : `5 h 16 % · 7 j 14 %`. Info-bulle : utilisation et heure de réinitialisation
-    de chaque fenêtre (y compris les fenêtres propres à un modèle). Accent brique à partir de 80 %.
+    de chaque fenêtre (y compris les fenêtres propres à un modèle). Mêmes couleurs que la jauge.
     Masqué si l'abonnement n'expose pas de limites (clé API) ou si la CLI est absente.
 - **Fiche F** : lignes « Contexte » (`130 k / 1 M · 13 %`), « Tokens en entrée » (`12,3 M · cache 97 %`), « Tokens en sortie ».
 - Nombres compacts formatés selon la langue.
@@ -45,7 +49,11 @@ ni où on en est de son abonnement (fenêtre de 5 heures, semaine) avant d'être
   Les sondes passent une par une. Vérifié : ≈ 0,2 à 0,8 s, aucun JSONL créé, aucun quota consommé.
 - **Application** : service d'usage (cache des fenêtres, quota courant, rafraîchissement limité à une fois par minute).
 - **Contrat IPC** : `usage.quota` → quota ou `null` ; `usage.contextWindow { model }` → `{ window }` ; événement `usage.quota`.
-- **Domaine** : calcul du pourcentage, seuil d'alerte, conversion des fenêtres de quota.
+- **Domaine** : pourcentage, niveaux (vigilance 50 %, alerte 80 %), seuil de compactage, catégories du contexte.
+- **Découpage** : `getContextUsage({ detail: 'full' })` sur la session en direct, seulement à l'ouverture du détail
+  (≈ 1 s, compté par l'API de comptage des tokens, sans consommer l'abonnement). Le mode « résumé » n'est qu'une estimation
+  (messages comptés à 1 token) : écarté. Une session terminée ne peut pas être analysée : la rouvrir écrit dans son JSONL.
+- **Couleur ocre** (`--caution`) : reprise de la palette sœur C2, validée par Thibault le 2026-10-04.
 
 ## Spécificités par fournisseur
 Claude uniquement (capacités `usage.context`, `usage.quota`). Codex et Gemini : jauges masquées jusqu'à F15.

@@ -11,6 +11,7 @@ import type { HistoryEvent } from '../../../core/domain/history/events'
 import type { LiveEvent, PermissionDecision } from '../../../core/domain/live/live-events'
 import type { AgentRuntime, LiveRun, LiveRunOptions } from '../../../core/domain/ports/agent-runtime'
 import { AsyncQueue } from './async-queue'
+import { contextBreakdownFrom } from './claude-context-usage'
 import { mapAssistantContent, toolResult, usageOf } from './claude-event-mapper'
 import { contextTokensOf } from '../../../core/domain/usage/usage'
 
@@ -91,6 +92,8 @@ export class ClaudeAgentRuntime implements AgentRuntime {
         input.close()
         session.close()
       },
+      // Détail complet (compté par l'API de comptage des tokens, ≈ 1 s) : demandé seulement à l'ouverture du détail.
+      contextBreakdown: async () => contextBreakdownFrom(await session.getContextUsage({ detail: 'full' })),
       answerPermission: (requestId, decision) => {
         const pending = permissions.get(requestId)
         if (pending === undefined) return

@@ -1,4 +1,5 @@
 import type { LiveEvent, PermissionDecision } from '../live/live-events'
+import type { ContextBreakdown } from '../usage/usage'
 
 export interface LiveRunOptions {
   /** Dossier du projet dans lequel l'agent travaille. */
@@ -14,6 +15,8 @@ export interface LiveRun {
   interrupt(): Promise<void>
   stop(): void
   answerPermission(requestId: string, decision: PermissionDecision): void
+  /** Découpage exact du contexte de la session (F08) ; `null` si le fournisseur ne le donne pas. */
+  contextBreakdown(): Promise<ContextBreakdown | null>
 }
 
 /** Pilotage d'un agent en direct (PLAN.md §2.2). */

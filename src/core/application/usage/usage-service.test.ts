@@ -11,7 +11,7 @@ const quota: PlanQuota = {
 function setup(probe: Partial<UsageProbe> = {}) {
   let time = 0
   const fullProbe: UsageProbe = {
-    contextWindow: vi.fn(async () => 1_000_000),
+    contextLimits: vi.fn(async () => ({ window: 1_000_000, autoCompactAt: 967_000 })),
     quota: vi.fn(async () => quota),
     ...probe,
   }
@@ -22,25 +22,29 @@ function setup(probe: Partial<UsageProbe> = {}) {
 }
 
 describe('UsageService', () => {
-  it('demande la fenêtre d’un modèle une seule fois, même en parallèle', async () => {
+  it('demande les limites d’un modèle une seule fois, même en parallèle', async () => {
     const { service, probe } = setup()
-    const [a, b] = await Promise.all([service.contextWindow('opus'), service.contextWindow('opus')])
-    expect([a, b, await service.contextWindow('opus')]).toEqual([1_000_000, 1_000_000, 1_000_000])
-    expect(probe.contextWindow).toHaveBeenCalledTimes(1)
+    const [a, b] = await Promise.all([service.contextLimits('opus'), service.contextLimits('opus')])
+    await service.contextLimits('opus')
+    expect([a?.window, b?.window]).toEqual([1_000_000, 1_000_000])
+    expect(probe.contextLimits).toHaveBeenCalledTimes(1)
   })
 
-  it('préfère la taille rapportée par une session en direct', async () => {
-    const { service, probe } = setup()
-    service.rememberContextWindow('sonnet', 200_000)
-    expect(await service.contextWindow('sonnet')).toBe(200_000)
-    expect(probe.contextWindow).not.toHaveBeenCalled()
+  it('corrige la fenêtre avec celle vue en direct, en gardant la réserve de compactage', async () => {
+    const contextLimits = vi.fn(async () => ({ window: 200_000, autoCompactAt: 167_000 }))
+    const { service } = setup({ contextLimits })
+    service.rememberContextWindow('sonnet', 1_000_000)
+    expect(await service.contextLimits('sonnet')).toEqual({ window: 1_000_000, autoCompactAt: 967_000 })
   })
 
   it('ne mémorise pas un échec de la sonde', async () => {
-    const contextWindow = vi.fn().mockRejectedValueOnce(new Error('panne')).mockResolvedValue(200_000)
-    const { service, log } = setup({ contextWindow })
-    expect(await service.contextWindow('haiku')).toBeNull()
-    expect(await service.contextWindow('haiku')).toBe(200_000)
+    const contextLimits = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('panne'))
+      .mockResolvedValue({ window: 200_000, autoCompactAt: null })
+    const { service, log } = setup({ contextLimits })
+    expect(await service.contextLimits('haiku')).toBeNull()
+    expect((await service.contextLimits('haiku'))?.window).toBe(200_000)
     expect(log).toHaveBeenCalledOnce()
   })
 
@@ -69,7 +73,7 @@ describe('UsageService', () => {
 
   it('reste muet sans fournisseur capable de lire son usage', async () => {
     const service = new UsageService({ probe: undefined, now: () => new Date(), onQuota: vi.fn(), log: vi.fn() })
-    expect(await service.contextWindow('opus')).toBeNull()
+    expect(await service.contextLimits('opus')).toBeNull()
     await service.refreshQuota()
     expect(service.currentQuota()).toBeNull()
   })
@@ -80,7 +84,8 @@ describe('UsageService', () => {
       tokens: 130_000,
       window: 1_000_000,
       percent: 13,
-      warning: false,
+      level: 'normal',
+      autoCompactAt: 967_000,
     })
     expect((await service.gauge(null, 130_000)).window).toBeNull()
   })

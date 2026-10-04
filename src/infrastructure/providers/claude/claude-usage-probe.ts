@@ -1,7 +1,13 @@
 import { tmpdir } from 'node:os'
 import { query, type Query, type SDKUserMessage } from '@anthropic-ai/claude-agent-sdk'
 import type { UsageProbe } from '../../../core/domain/ports/usage-probe'
-import { normalizeUtilization, type PlanQuota, type QuotaWindow } from '../../../core/domain/usage/usage'
+import {
+  normalizeUtilization,
+  type ContextLimits,
+  type PlanQuota,
+  type QuotaWindow,
+} from '../../../core/domain/usage/usage'
+import { contextLimitsFrom } from './claude-context-usage'
 import { AsyncQueue } from './async-queue'
 import type { ClaudeRuntimeConfig } from './claude-agent-runtime'
 
@@ -17,11 +23,9 @@ export class ClaudeUsageProbe implements UsageProbe {
 
   constructor(private readonly config: ClaudeRuntimeConfig) {}
 
-  contextWindow(model: string): Promise<number | null> {
-    return this.probe(model, async (session) => {
-      const usage = await session.getContextUsage({ detail: 'summary' })
-      return typeof usage.maxTokens === 'number' && usage.maxTokens > 0 ? usage.maxTokens : null
-    })
+  contextLimits(model: string): Promise<ContextLimits | null> {
+    // Résumé suffisant : seules la fenêtre et le seuil de compactage sont lus.
+    return this.probe(model, async (session) => contextLimitsFrom(await session.getContextUsage({ detail: 'summary' })))
   }
 
   quota(): Promise<PlanQuota | null> {

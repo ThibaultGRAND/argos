@@ -39,8 +39,8 @@ import { ElectronAppPresence, ElectronNotifier } from './adapters/electron-notif
 import { IntlifyTranslator } from './adapters/intlify-translator'
 import type { RequestHandlers } from './ipc/register'
 import type { Snapshot } from '../core/domain/snapshots/snapshot'
-import type { PlanQuotaDto, ReviewCommentDto, SnapshotDto } from '../shared/contract'
-import { isQuotaWarning, type PlanQuota } from '../core/domain/usage/usage'
+import type { ContextBreakdownDto, PlanQuotaDto, ReviewCommentDto, SnapshotDto } from '../shared/contract'
+import { levelOf, type ContextBreakdown, type PlanQuota } from '../core/domain/usage/usage'
 import type { ReviewComment } from '../core/domain/review/review-comment'
 import type { AppPaths } from './paths'
 
@@ -291,6 +291,10 @@ export function compose({
       return { quota: quota === null ? null : toQuotaDto(quota) }
     },
     'usage.contextGauge': ({ model, tokens }) => usageService.gauge(model, tokens),
+    'usage.contextDetail': async ({ sessionExternalId }) => {
+      const breakdown = await liveSessions.contextBreakdown(sessionExternalId)
+      return { breakdown: breakdown === null ? null : toBreakdownDto(breakdown) }
+    },
     'links.open': async ({ url }) => {
       await openExternalLink.execute(url)
       return undefined
@@ -335,7 +339,15 @@ function toSnapshotDto(snapshot: Snapshot): SnapshotDto {
 function toQuotaDto(quota: PlanQuota): PlanQuotaDto {
   return {
     fetchedAt: quota.fetchedAt,
-    windows: quota.windows.map((window) => ({ ...window, warning: isQuotaWarning(window) })),
+    windows: quota.windows.map((window) => ({ ...window, level: levelOf(window.utilization) })),
+  }
+}
+
+function toBreakdownDto(breakdown: ContextBreakdown): ContextBreakdownDto {
+  return {
+    ...breakdown,
+    categories: breakdown.categories.map((category) => ({ ...category })),
+    memoryFiles: breakdown.memoryFiles.map((file) => ({ ...file })),
   }
 }
 

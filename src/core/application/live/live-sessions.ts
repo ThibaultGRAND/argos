@@ -7,6 +7,7 @@ import {
   type PermissionRequest,
 } from '../../domain/live/live-events'
 import type { AgentRuntime, LiveRun } from '../../domain/ports/agent-runtime'
+import type { ContextBreakdown } from '../../domain/usage/usage'
 
 export interface RunSummary {
   readonly runId: string
@@ -94,6 +95,12 @@ export class LiveSessions {
     }
     state.run.answerPermission(requestId, decision)
     this.emit(state, { type: 'permission-resolved', requestId })
+  }
+
+  /** Découpage du contexte de la session que pilote Argos pour cet identifiant ; `null` si elle n'est pas ouverte (F08). */
+  async contextBreakdown(sessionExternalId: string): Promise<ContextBreakdown | null> {
+    const runId = this.activeRunFor(sessionExternalId)
+    return runId === undefined ? null : this.get(runId).run.contextBreakdown()
   }
 
   list(): readonly RunSummary[] {

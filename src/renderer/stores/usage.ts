@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
-import type { ContextGaugeDto, PlanQuotaDto } from '@shared/contract'
+import type { ContextBreakdownDto, ContextGaugeDto, PlanQuotaDto } from '@shared/contract'
 import { argos, unwrap } from '../services/argos'
 import { useLiveStore } from './live'
 import { useSessionStore } from './session'
@@ -11,6 +11,9 @@ export const useUsageStore = defineStore('usage', () => {
   const gauge = ref<ContextGaugeDto | undefined>()
   /** Augmente quand une session en direct rapporte la taille exacte des fenêtres : la jauge est recalculée. */
   const windowsRevision = ref(0)
+  /** Découpage du contexte de la session ouverte, demandé à l'ouverture du détail (session pilotée par Argos). */
+  const breakdown = ref<ContextBreakdownDto | null | undefined>()
+  const breakdownLoading = ref(false)
 
   const session = useSessionStore()
   const live = useLiveStore()
@@ -53,5 +56,27 @@ export const useUsageStore = defineStore('usage', () => {
     )
   }
 
-  return { quota, gauge, load }
+  /** Vrai si Argos pilote la session ouverte : seul cas où le découpage par catégorie est disponible. */
+  const breakdownAvailable = computed(() => {
+    const detail = session.detail
+    return detail !== undefined && live.runForSession(detail.externalId) !== undefined
+  })
+
+  let detailRequest = 0
+  async function loadBreakdown(): Promise<void> {
+    const detail = session.detail
+    const id = ++detailRequest
+    breakdown.value = undefined
+    if (detail === undefined || !breakdownAvailable.value) {
+      breakdown.value = null
+      return
+    }
+    breakdownLoading.value = true
+    const result = await argos.invoke('usage.contextDetail', { sessionExternalId: detail.externalId })
+    if (id !== detailRequest) return
+    breakdownLoading.value = false
+    breakdown.value = result.ok ? result.data.breakdown : null
+  }
+
+  return { quota, gauge, breakdown, breakdownLoading, breakdownAvailable, load, loadBreakdown }
 })

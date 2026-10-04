@@ -26,6 +26,8 @@
   --tx2: #a89f93;
   --tx3: #786f65;
   --acc: #d2694b;
+  /* Vigilance (jauges, F08) : ocre de la palette sœur C2, entre le neutre et l'accent brique. */
+  --caution: #c99a3e;
   --sel-bg: #25221e;
   --user-bg: #2a2621;
 
@@ -53,6 +55,7 @@
   --tx2: #5e574d;
   --tx3: #8a8276;
   --acc: #a8442a;
+  --caution: #8e650f;
   --sel-bg: #ebe5da;
   --user-bg: #fbf9f4;
 

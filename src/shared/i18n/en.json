@@ -320,6 +320,29 @@
         "weekly": "Week",
         "weekly-model": "Week, {model}"
       }
+    },
+    "detailTitle": "Context · {model}",
+    "autoCompact": "Auto-compact at {tokens} ({percent}%)",
+    "autoCompactOff": "Auto-compact disabled",
+    "breakdownLoading": "Analyzing the context…",
+    "breakdownUnavailable": "The per-category breakdown is only available while Argos drives the session.",
+    "breakdownFailed": "Breakdown unavailable right now.",
+    "memoryFiles": "Memory files",
+    "sessionTotals": "Whole session",
+    "close": "Close",
+    "openDetail": "Show context details",
+    "categories": {
+      "system-prompt": "System prompt",
+      "system-tools": "Tools",
+      "mcp-tools": "MCP tools",
+      "mcp-instructions": "MCP instructions",
+      "agents": "Agents",
+      "memory": "Memory files",
+      "skills": "Skills",
+      "messages": "Messages",
+      "buffer": "Auto-compact reserve",
+      "free": "Free",
+      "other": "{label}"
     }
   }
 }

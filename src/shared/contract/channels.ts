@@ -33,6 +33,7 @@ export const requestNames = [
   'review.send',
   'usage.quota',
   'usage.contextGauge',
+  'usage.contextDetail',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 

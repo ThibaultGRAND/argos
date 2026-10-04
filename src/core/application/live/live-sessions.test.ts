@@ -18,6 +18,7 @@ class FakeRun implements LiveRun {
   stop(): void {
     this.stopped = true
   }
+  contextBreakdown = async () => null
   answerPermission(requestId: string, decision: PermissionDecision): void {
     this.answers.push([requestId, decision])
   }
