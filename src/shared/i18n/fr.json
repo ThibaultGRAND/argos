@@ -312,7 +312,10 @@
     "nothingSinceReview": "Rien de nouveau depuis ta dernière review.",
     "summary": "{count} fichier | {count} fichiers",
     "otherChanges": "Autres modifications · {count}",
-    "otherHint": "Modifiées hors des tours de l'agent sur cette plage. Elles ne se commentent pas."
+    "otherHint": "Modifiées hors des tours de l'agent sur cette plage. Elles ne se commentent pas.",
+    "fileReviewed": "Relu",
+    "fileReviewedTitle": "Marquer ce fichier comme relu. Il redeviendra à relire si l'agent le modifie encore.",
+    "reviewedCount": "{done} / {total} relus"
   },
   "notifications": {
     "permission": {

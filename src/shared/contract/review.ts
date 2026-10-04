@@ -27,6 +27,10 @@ export const FileDiffSchema = z.object({
   truncated: z.boolean(),
   /** Fichier de l'agent aussi modifié hors de ses tours. */
   alsoOutside: z.boolean(),
+  /** Version du contenu « après » (identifiant git) : c'est elle qui est marquée relue. */
+  blob: z.string().nullable(),
+  /** Vrai si cette version du fichier a été marquée relue. */
+  reviewed: z.boolean(),
 })
 export type FileDiffDto = z.infer<typeof FileDiffSchema>
 

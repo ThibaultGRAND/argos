@@ -13,6 +13,7 @@ const file = (path: string): FileDiff => ({
   binary: false,
   additions: 1,
   deletions: 0,
+  blob: null,
   hunks: [],
   truncated: false,
 })

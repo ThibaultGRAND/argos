@@ -131,6 +131,25 @@ Table `snapshots` : `label` (TEXT, nul) et `reviewed_at` (TEXT, nul). La nouvell
 7. **Vérification réelle** dans `argos-demo` : trois tours avec une modification à la main entre deux tours,
    « Marquer comme relu », un tour de plus, puis les trois annulations et « Annuler le retour ».
 
+## Ajout du 2026-10-04 : relire fichier par fichier
+**Demande de Thibault** : on peut marquer toute la review comme relue, mais pas un seul fichier.
+
+- **Comportement** :
+  - chaque fichier de la review a une case **« Relu »** dans son en-tête ;
+  - cochée, le fichier se replie et passe en retrait ;
+  - le sommaire affiche `2 / 3 relus` et une coche devant chaque fichier relu.
+- **Comme sur GitHub, « relu » vaut pour une version du fichier** : si l'agent le modifie à nouveau, la case se décoche toute seule.
+- **« Marquer comme relu »** (toute la plage) reste disponible ; il ne coche pas les fichiers un par un.
+- **Les autres modifications** n'ont pas de case : elles ne sont pas à relire comme un travail de l'agent.
+- **Version du fichier** : identifiant git du contenu (blob) du côté « après » du diff (`git diff --full-index`).
+  Un fichier supprimé a pour version l'identifiant nul de git.
+- **Schéma `argos.db`** (nouvelle migration) : table `reviewed_files` (donnée propre à Argos, clé UUID) avec
+  `provider_id`, `session_external_id`, `file_path`, `blob`, `created_at`, `updated_at`.
+  Une ligne par fichier et par session (unicité sur `provider_id`, `session_external_id`, `file_path`), mise à jour à chaque coche.
+- **Contrat** :
+  - `FileDiff` gagne `blob` et `reviewed` ;
+  - nouvelles requêtes `review.files.mark { sessionExternalId, path, blob }` et `review.files.unmark { sessionExternalId, path }`.
+
 ## Bilan de l'implémentation (2026-10-04)
 - **Parcours réel dans `argos-demo`** (Haiku, trois tours) :
   - tour 1 : `fruits.md` créé ;
@@ -150,4 +169,9 @@ Table `snapshots` : `label` (TEXT, nul) et `reviewed_at` (TEXT, nul). La nouvell
 - Capture avant chaque consigne : faite avant l'envoi à l'agent ; une consigne envoyée pendant un tour le rejoint sans capture.
 - Avertissement « Une autre session travaille déjà dans ce projet » sur l'écran de nouvelle session.
 - Migration `0003_snapshot_labels` appliquée, avec copie automatique de `argos.db` avant.
+- **Relecture par fichier** (ajout du même jour) :
+  - testée sur le domaine, le service et la base (une marque par fichier, remplacée à chaque nouvelle version) ;
+  - le parseur lit la version de chaque fichier (`git diff --full-index`) ;
+  - migration `0004_reviewed_files` relue ;
+  - **pas encore vérifiée dans l'app**, l'instance de Thibault étant ouverte.
 

@@ -312,7 +312,10 @@
     "nothingSinceReview": "Nothing new since your last review.",
     "summary": "{count} file | {count} files",
     "otherChanges": "Other changes · {count}",
-    "otherHint": "Changed outside the agent's turns in this range. They cannot be commented."
+    "otherHint": "Changed outside the agent's turns in this range. They cannot be commented.",
+    "fileReviewed": "Reviewed",
+    "fileReviewedTitle": "Mark this file as reviewed. It goes back to unreviewed if the agent changes it again.",
+    "reviewedCount": "{done} / {total} reviewed"
   },
   "notifications": {
     "permission": {

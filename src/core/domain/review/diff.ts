@@ -25,6 +25,8 @@ export interface FileDiff {
   readonly binary: boolean
   readonly additions: number
   readonly deletions: number
+  /** Version du contenu « après » (identifiant git du blob) ; `null` si git ne l'a pas donnée. */
+  readonly blob: string | null
   readonly hunks: readonly DiffHunk[]
   /** Vrai si le diff du fichier a été coupé (trop de lignes). */
   readonly truncated: boolean

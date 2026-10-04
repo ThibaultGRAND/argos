@@ -6,6 +6,8 @@ import type { ShadowRepository } from '../../domain/ports/shadow-repository'
 import type { SnapshotRepository } from '../../domain/ports/snapshot-repository'
 import type { FileDiff } from '../../domain/review/diff'
 import { formatReviewMessage, type CommentSide, type ReviewComment } from '../../domain/review/review-comment'
+import { isReviewed } from '../../domain/review/reviewed-file'
+import type { ReviewedFileRepository } from '../../domain/ports/reviewed-file-repository'
 import {
   checkpointsOf,
   reviewBounds,
@@ -24,11 +26,15 @@ export interface ReviewDiff {
   readonly sinceReviewAvailable: boolean
   readonly from: Snapshot | null
   readonly to: Snapshot | null
-  /** Travail de l'agent sur la plage. */
-  readonly files: readonly AttributedFile<FileDiff>[]
+  /** Travail de l'agent sur la plage, chaque fichier avec sa marque « relu » (pour sa version actuelle). */
+  readonly files: readonly ReviewFile[]
   /** Modifications faites hors des tours de l'agent sur la plage. */
   readonly otherFiles: readonly FileDiff[]
   readonly truncated: boolean
+}
+
+export interface ReviewFile extends AttributedFile<FileDiff> {
+  readonly reviewed: boolean
 }
 
 export interface NewComment {
@@ -49,6 +55,7 @@ export interface ReviewServiceDependencies {
   readonly attribution: ChangeAttribution
   readonly snapshots: SnapshotRepository
   readonly comments: ReviewCommentRepository
+  readonly reviewedFiles: ReviewedFileRepository
   readonly preferences: PreferencesRepository
   readonly sendToSession: SendToSession
   readonly newId: () => string
@@ -74,7 +81,25 @@ export class ReviewService {
     const { from, to } = bounds
     const { files, truncated } = await this.deps.shadow.diff(to.projectPath, from.commitHash, to.commitHash)
     const { agent, other } = await this.deps.attribution.attribute(files, bounds.turns, bounds.outside)
-    return { range, turns, sinceReviewAvailable, from, to, files: agent, otherFiles: other, truncated }
+    const reviewed = this.deps.reviewedFiles.listForSession(PROVIDER, sessionExternalId)
+    const withMarks = agent.map((entry) => ({ ...entry, reviewed: isReviewed(entry.file, reviewed) }))
+    return { range, turns, sinceReviewAvailable, from, to, files: withMarks, otherFiles: other, truncated }
+  }
+
+  /** Marque une version d'un fichier comme relue ; une nouvelle modification de l'agent la rendra à relire. */
+  markFileReviewed(sessionExternalId: string, filePath: string, blob: string | null): void {
+    this.deps.reviewedFiles.save({
+      id: this.deps.newId(),
+      providerId: PROVIDER,
+      sessionExternalId,
+      filePath,
+      blob: blob ?? '',
+      reviewedAt: this.deps.now().toISOString(),
+    })
+  }
+
+  unmarkFileReviewed(sessionExternalId: string, filePath: string): void {
+    this.deps.reviewedFiles.remove(PROVIDER, sessionExternalId, filePath)
   }
 
   /** « Marquer comme relu » : la prochaine review « depuis ma dernière review » part de cette capture. */

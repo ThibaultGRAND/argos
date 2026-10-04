@@ -66,6 +66,14 @@ export const requests = {
     output: ReviewDiffSchema,
   },
   'review.markReviewed': { input: z.object({ snapshotId: z.string() }), output: z.undefined() },
+  'review.files.mark': {
+    input: z.object({ sessionExternalId: z.string(), path: z.string().max(4096), blob: z.string().max(64).nullable() }),
+    output: z.undefined(),
+  },
+  'review.files.unmark': {
+    input: z.object({ sessionExternalId: z.string(), path: z.string().max(4096) }),
+    output: z.undefined(),
+  },
   'review.comments.list': { input: z.object({ sessionExternalId: z.string() }), output: z.array(ReviewCommentSchema) },
   'review.comments.add': { input: NewReviewCommentSchema, output: ReviewCommentSchema },
   'review.comments.delete': { input: z.object({ id: z.string() }), output: z.undefined() },

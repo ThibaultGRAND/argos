@@ -6,6 +6,8 @@ import type { SnapshotRepository } from '../../domain/ports/snapshot-repository'
 import type { ReviewComment } from '../../domain/review/review-comment'
 import type { Snapshot } from '../../domain/snapshots/snapshot'
 import { ChangeAttribution } from '../snapshots/change-attribution'
+import type { ReviewedFileRepository } from '../../domain/ports/reviewed-file-repository'
+import type { ReviewedFile } from '../../domain/review/reviewed-file'
 import { ReviewService } from './review-service'
 
 const snapshot = (id: string, ordinal: number): Snapshot => ({
@@ -25,9 +27,10 @@ const snapshot = (id: string, ordinal: number): Snapshot => ({
   createdAt: '2026-10-03T12:00:00.000Z',
 })
 
-const fileDiff = (path: string) => ({
+const fileDiff = (path: string, blob: string | null = `${path}-v1`) => ({
   path,
   oldPath: null,
+  blob,
   status: 'modified' as const,
   binary: false,
   additions: 1,
@@ -75,8 +78,23 @@ function setup(snapshots: Snapshot[]) {
       for (const [index, row] of rows.entries()) if (ids.includes(row.id)) rows[index] = { ...row, sentAt: at }
     },
   }
+  const marks: ReviewedFile[] = []
+  const reviewedFiles: ReviewedFileRepository = {
+    listForSession: () => marks,
+    save: (file) => {
+      const index = marks.findIndex((mark) => mark.filePath === file.filePath)
+      if (index === -1) marks.push(file)
+      else marks[index] = file
+    },
+    remove: (_provider, _session, path) =>
+      void marks.splice(
+        marks.findIndex((mark) => mark.filePath === path),
+        1,
+      ),
+  }
   let id = 0
   const service = new ReviewService({
+    reviewedFiles,
     shadow,
     attribution: new ChangeAttribution(shadow),
     snapshots: snapshotRepository,
@@ -145,6 +163,16 @@ describe('ReviewService', () => {
     const diff = await service.diff('s')
     expect(diff.files.map((entry) => entry.file.path)).toEqual(['a.ts'])
     expect(diff.otherFiles.map((file) => file.path)).toEqual(['notes.md'])
+  })
+
+  it('marque un fichier relu pour sa version, puis le démarque', async () => {
+    const { service } = setup([snapshot('a', 0), snapshot('b', 1)])
+    service.markFileReviewed('s', 'a.ts', 'a.ts-v1')
+    expect((await service.diff('s')).files.map((entry) => [entry.file.path, entry.reviewed])).toEqual([['a.ts', true]])
+    service.markFileReviewed('s', 'a.ts', 'a.ts-v0')
+    expect((await service.diff('s')).files[0]?.reviewed).toBe(false)
+    service.unmarkFileReviewed('s', 'a.ts')
+    expect((await service.diff('s')).files[0]?.reviewed).toBe(false)
   })
 
   it('ne compare rien sans au moins deux snapshots', async () => {

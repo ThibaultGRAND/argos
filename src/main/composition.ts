@@ -25,6 +25,7 @@ import { openArgosDatabase } from '../infrastructure/database/argos/argos-databa
 import { SqlitePreferencesRepository } from '../infrastructure/database/argos/preferences-repository'
 import { SqliteSnapshotRepository } from '../infrastructure/database/argos/snapshot-repository'
 import { SqliteReviewCommentRepository } from '../infrastructure/database/argos/review-comment-repository'
+import { SqliteReviewedFileRepository } from '../infrastructure/database/argos/reviewed-file-repository'
 import { GitShadowRepository } from '../infrastructure/git/git-shadow-repository'
 import { ReadOnlySessionQueries } from '../infrastructure/database/index/read-only-session-queries'
 import { NodePathInspector } from '../infrastructure/filesystem/path-inspector'
@@ -205,6 +206,7 @@ export function compose({
     attribution,
     snapshots: snapshotRepository,
     comments: new SqliteReviewCommentRepository(argosDb.database),
+    reviewedFiles: new SqliteReviewedFileRepository(argosDb.database),
     preferences: preferencesRepository,
     sendToSession: (sessionId, text) => liveCommands.continueSession(sessionId, text),
     newId: randomUUID,
@@ -273,8 +275,8 @@ export function compose({
         sinceReviewAvailable: diff.sinceReviewAvailable,
         fromId: diff.from?.id ?? null,
         toId: diff.to?.id ?? null,
-        files: diff.files.map(({ file, alsoOutside }) => toFileDiffDto(file, alsoOutside)),
-        otherFiles: diff.otherFiles.map((file) => toFileDiffDto(file, false)),
+        files: diff.files.map(({ file, alsoOutside, reviewed }) => toFileDiffDto(file, alsoOutside, reviewed)),
+        otherFiles: diff.otherFiles.map((file) => toFileDiffDto(file, false, false)),
         truncated: diff.truncated,
       }
     },
@@ -287,6 +289,14 @@ export function compose({
     'review.send': ({ sessionId, sessionExternalId }) => reviewService.send(sessionId, sessionExternalId),
     'snapshots.restore': async (action) => {
       await snapshotService.restore(action)
+      return undefined
+    },
+    'review.files.mark': ({ sessionExternalId, path, blob }) => {
+      reviewService.markFileReviewed(sessionExternalId, path, blob)
+      return undefined
+    },
+    'review.files.unmark': ({ sessionExternalId, path }) => {
+      reviewService.unmarkFileReviewed(sessionExternalId, path)
       return undefined
     },
     'review.markReviewed': ({ snapshotId }) => {
@@ -353,8 +363,8 @@ function toChangedFile(file: FileDiff, alsoOutside: boolean): ChangedFileDto {
   return { path, oldPath, status, binary, additions, deletions, alsoOutside }
 }
 
-function toFileDiffDto(file: FileDiff, alsoOutside: boolean): FileDiffDto {
-  return { ...file, alsoOutside, hunks: file.hunks.map((hunk) => ({ ...hunk, lines: [...hunk.lines] })) }
+function toFileDiffDto(file: FileDiff, alsoOutside: boolean, reviewed: boolean): FileDiffDto {
+  return { ...file, alsoOutside, reviewed, hunks: file.hunks.map((hunk) => ({ ...hunk, lines: [...hunk.lines] })) }
 }
 
 /** Un tour, désigné par sa capture : les commits restent internes au processus principal. */

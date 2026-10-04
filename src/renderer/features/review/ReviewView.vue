@@ -22,6 +22,8 @@ const notices = useNoticesStore()
 const { diff, pending, loading, range, focusFile } = storeToRefs(review)
 
 /** Valeur du choix de plage : `session`, `since-review` ou l'identifiant de la capture d'un tour. */
+const reviewedCount = computed(() => diff.value?.files.filter((file) => file.reviewed).length ?? 0)
+
 const rangeValue = computed(() => (range.value.kind === 'turn' ? range.value.snapshotId : range.value.kind))
 
 const turnOptions = computed(() =>
@@ -114,8 +116,11 @@ function send(): void {
       <p v-else-if="diff.files.length === 0 && !loading" class="review__note">{{ t('review.noChanges') }}</p>
       <p v-if="diff.truncated" class="review__note">{{ t('review.truncatedFiles') }}</p>
 
-      <nav v-if="diff.files.length > 1" class="review__summary">
-        <p class="review__summary-title">{{ t('review.summary', { count: diff.files.length }, diff.files.length) }}</p>
+      <nav v-if="diff.files.length > 0" class="review__summary">
+        <p class="review__summary-title">
+          {{ t('review.summary', { count: diff.files.length }, diff.files.length) }} ·
+          {{ t('review.reviewedCount', { done: reviewedCount, total: diff.files.length }) }}
+        </p>
         <button
           v-for="file in diff.files"
           :key="file.path"
@@ -123,7 +128,10 @@ function send(): void {
           class="review__summary-file"
           @click="scrollToFile(file.path)"
         >
-          <span class="review__summary-path">{{ file.path }}</span>
+          <span class="review__summary-check" aria-hidden="true">{{ file.reviewed ? '✓' : '' }}</span>
+          <span class="review__summary-path" :class="{ 'review__summary-path--done': file.reviewed }">{{
+            file.path
+          }}</span>
           <span class="review__summary-delta">+{{ file.additions }} −{{ file.deletions }}</span>
         </button>
       </nav>
@@ -136,6 +144,7 @@ function send(): void {
         :project-path="detail.projectPath"
         :snapshot-id="diff.toId"
         :restorable="diff.fromId !== null"
+        :reviewable="true"
         @restore="restoreFile(file)"
       />
 
@@ -150,6 +159,7 @@ function send(): void {
           :project-path="detail.projectPath"
           :snapshot-id="null"
           :restorable="false"
+          :reviewable="false"
         />
       </details>
     </template>
@@ -230,8 +240,7 @@ function send(): void {
 
 .review__summary-file {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
   padding: 2px 0;
   border: 0;
   background: none;
@@ -249,9 +258,21 @@ function send(): void {
 }
 
 .review__summary-path {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.review__summary-check {
+  flex: none;
+  width: 12px;
+  color: var(--tx2);
+}
+
+.review__summary-path--done {
+  color: var(--tx3);
 }
 
 .review__summary-delta {

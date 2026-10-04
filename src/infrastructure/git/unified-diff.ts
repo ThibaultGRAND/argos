@@ -38,6 +38,7 @@ interface Draft {
   binary: boolean
   additions: number
   deletions: number
+  blob: string | null
   hunks: { oldStart: number; newStart: number; section: string; lines: DiffLine[] }[]
   lineCount: number
   truncated: boolean
@@ -73,6 +74,7 @@ export function parseUnifiedDiff(output: string, limits: DiffLimits): { files: F
         binary: false,
         additions: 0,
         deletions: 0,
+        blob: null,
         hunks: [],
         lineCount: 0,
         truncated: false,
@@ -85,6 +87,9 @@ export function parseUnifiedDiff(output: string, limits: DiffLimits): { files: F
     const file = current
 
     if (file.hunks.length === 0) {
+      // « index <avant>..<après> [mode] » : version du contenu après la modification (complète avec --full-index).
+      const index = /^index [0-9a-f]+\.\.([0-9a-f]+)/.exec(line)
+      if (index !== null) file.blob = index[1] ?? null
       if (line.startsWith('new file mode')) file.status = 'added'
       else if (line.startsWith('deleted file mode')) file.status = 'deleted'
       else if (line.startsWith('rename from ')) {
@@ -134,13 +139,14 @@ export function parseUnifiedDiff(output: string, limits: DiffLimits): { files: F
 
   return {
     truncated: truncatedFiles,
-    files: files.map(({ path, oldPath, status, binary, additions, deletions, hunks, truncated }): FileDiff => ({
+    files: files.map(({ path, oldPath, status, binary, additions, deletions, blob, hunks, truncated }): FileDiff => ({
       path,
       oldPath,
       status,
       binary,
       additions,
       deletions,
+      blob,
       hunks: hunks.filter((hunk) => hunk.lines.length > 0) as DiffHunk[],
       truncated,
     })),

@@ -11,13 +11,29 @@ import { joinProjectPath } from '../../utils/format'
  * Diff d'un fichier : numéros de ligne avant / après, commentaires sur une ligne (F07), « Annuler ce fichier ».
  * `snapshotId` nul : fichier non commentable (autres modifications).
  */
-const props = defineProps<{ file: FileDiffDto; projectPath: string; snapshotId: string | null; restorable: boolean }>()
+const props = defineProps<{
+  file: FileDiffDto
+  projectPath: string
+  snapshotId: string | null
+  restorable: boolean
+  /** Vrai pour le travail de l'agent : le fichier peut être marqué « relu ». */
+  reviewable: boolean
+}>()
 const emit = defineEmits<{ restore: [] }>()
 const { t } = useI18n()
 const review = useReviewStore()
 const notices = useNoticesStore()
 
-const open = ref(true)
+// Un fichier déjà relu s'affiche replié ; le cocher le replie.
+const open = ref(!props.file.reviewed)
+
+function toggleReviewed(): void {
+  const willBeReviewed = !props.file.reviewed
+  void notices.attempt(async () => {
+    await review.toggleFileReviewed(props.file.path)
+    open.value = !willBeReviewed
+  })
+}
 const editing = ref<string | undefined>()
 const draft = ref('')
 
@@ -69,7 +85,7 @@ function openAt(line?: number): void {
 </script>
 
 <template>
-  <section class="file">
+  <section class="file" :class="{ 'file--reviewed': file.reviewed }">
     <header class="file__header">
       <button type="button" class="file__toggle" :aria-expanded="open" @click="open = !open">
         <span class="file__caret" aria-hidden="true">{{ open ? '▾' : '▸' }}</span>
@@ -87,6 +103,10 @@ function openAt(line?: number): void {
       <button v-if="restorable" type="button" class="file__open file__open--danger" @click="emit('restore')">
         {{ t('snapshots.restoreFile') }}
       </button>
+      <label v-if="reviewable" class="file__reviewed" :title="t('review.fileReviewedTitle')">
+        <input type="checkbox" :checked="file.reviewed" @change="toggleReviewed" />
+        {{ t('review.fileReviewed') }}
+      </label>
     </header>
     <p v-if="file.alsoOutside" class="file__mention">{{ t('snapshots.alsoOutside') }}</p>
 
@@ -247,6 +267,25 @@ function openAt(line?: number): void {
 
 .file__open:hover {
   color: var(--tx);
+}
+
+.file__reviewed {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--tx2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.file__reviewed input {
+  margin: 0;
+  accent-color: var(--tx2);
+  cursor: pointer;
+}
+
+.file--reviewed .file__path {
+  color: var(--tx3);
 }
 
 .file__open--danger:hover {

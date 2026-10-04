@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /**
  * argos.db — données propres à Argos, non reconstructibles (CLAUDE.md §5.2).
@@ -67,5 +67,26 @@ export const reviewComments = sqliteTable(
   (table) => [
     // Commentaires d'une session (onglet Review).
     index('review_comments_session_idx').on(table.providerId, table.sessionExternalId),
+  ],
+)
+
+/**
+ * Fichiers marqués « relus » dans la review (features/agent_changes.md) : une marque par fichier et par session,
+ * pour une version du contenu (`blob`). Session référencée par sa clé naturelle.
+ */
+export const reviewedFiles = sqliteTable(
+  'reviewed_files',
+  {
+    id: text('id').primaryKey(),
+    providerId: text('provider_id').notNull(),
+    sessionExternalId: text('session_external_id').notNull(),
+    filePath: text('file_path').notNull(),
+    blob: text('blob').notNull(),
+    createdAt: text('created_at').notNull(),
+    updatedAt: text('updated_at').notNull(),
+  },
+  (table) => [
+    // Une marque par fichier ; sert aussi à lire les marques d'une session.
+    uniqueIndex('reviewed_files_session_path_unique').on(table.providerId, table.sessionExternalId, table.filePath),
   ],
 )

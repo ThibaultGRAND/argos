@@ -32,6 +32,8 @@ export const requestNames = [
   'review.comments.delete',
   'review.send',
   'review.markReviewed',
+  'review.files.mark',
+  'review.files.unmark',
   'usage.quota',
   'usage.contextGauge',
   'usage.contextDetail',

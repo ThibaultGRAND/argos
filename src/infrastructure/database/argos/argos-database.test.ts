@@ -4,6 +4,7 @@ import { join, resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { openArgosDatabase } from './argos-database'
 import { SqlitePreferencesRepository } from './preferences-repository'
+import { SqliteReviewedFileRepository } from './reviewed-file-repository'
 
 const migrationsFolder = resolve(__dirname, 'migrations')
 
@@ -24,6 +25,30 @@ describe('argos.db', () => {
       migrationsFolder,
       backupDirectory: join(directory, 'backups'),
     })
+
+  it('garde une seule marque « relu » par fichier, remplacée à chaque nouvelle version', () => {
+    const handle = open()
+    const repository = new SqliteReviewedFileRepository(handle.database)
+    const mark = (id: string, filePath: string, blob: string) =>
+      repository.save({
+        id,
+        providerId: 'claude',
+        sessionExternalId: 's',
+        filePath,
+        blob,
+        reviewedAt: '2026-10-04T12:00:00.000Z',
+      })
+    mark('1', 'a.ts', 'v1')
+    mark('2', 'a.ts', 'v2')
+    mark('3', 'b.ts', 'v1')
+    expect(repository.listForSession('claude', 's').map((file) => [file.filePath, file.blob])).toEqual([
+      ['a.ts', 'v2'],
+      ['b.ts', 'v1'],
+    ])
+    repository.remove('claude', 's', 'a.ts')
+    expect(repository.listForSession('claude', 's').map((file) => file.filePath)).toEqual(['b.ts'])
+    handle.close()
+  })
 
   it('renvoie les préférences par défaut sur une base neuve', async () => {
     const handle = open()

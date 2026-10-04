@@ -137,6 +137,7 @@ export class GitShadowRepository implements ShadowRepository {
       '--no-color',
       '--no-ext-diff',
       '--unified=0',
+      '--full-index',
       '--find-renames',
       commitHash,
     ])
@@ -153,6 +154,7 @@ export class GitShadowRepository implements ShadowRepository {
       '--no-color',
       '--no-ext-diff',
       '--unified=3',
+      '--full-index',
       '--find-renames',
       fromCommit,
       toCommit,

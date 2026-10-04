@@ -5,7 +5,7 @@ const limits = { maxLinesPerFile: 100, maxFiles: 10 }
 
 const sample = [
   'diff --git a/src/a.ts b/src/a.ts',
-  'index 111..222 100644',
+  'index 1111111111111111111111111111111111111111..2222222222222222222222222222222222222222 100644',
   '--- a/src/a.ts',
   '+++ b/src/a.ts',
   '@@ -1,3 +1,3 @@ function slug()',
@@ -46,7 +46,14 @@ describe('parseUnifiedDiff', () => {
   const { files } = parseUnifiedDiff(sample, limits)
 
   it('lit les fichiers modifiés avec des numéros de ligne avant et après', () => {
-    expect(files[0]).toMatchObject({ path: 'src/a.ts', status: 'modified', additions: 1, deletions: 1 })
+    expect(files[0]).toMatchObject({
+      path: 'src/a.ts',
+      status: 'modified',
+      additions: 1,
+      deletions: 1,
+      blob: '2222222222222222222222222222222222222222',
+    })
+    expect(files[1]?.blob).toBeNull()
     expect(files[0]?.hunks[0]).toMatchObject({ oldStart: 1, newStart: 1, section: 'function slug()' })
     expect(files[0]?.hunks[0]?.lines).toEqual([
       { type: 'context', oldNumber: 1, newNumber: 1, text: 'un' },

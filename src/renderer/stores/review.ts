@@ -48,6 +48,24 @@ export const useReviewStore = defineStore('review', () => {
     await load(sessionExternalId.value, nextRange)
   }
 
+  /** Coche ou décoche « Relu » sur un fichier ; l'affichage suit tout de suite, puis la marque est enregistrée. */
+  async function toggleFileReviewed(path: string): Promise<void> {
+    const externalId = sessionExternalId.value
+    const file = diff.value?.files.find((candidate) => candidate.path === path)
+    if (externalId === undefined || file === undefined) return
+    const reviewed = !file.reviewed
+    file.reviewed = reviewed
+    try {
+      const result = reviewed
+        ? await argos.invoke('review.files.mark', { sessionExternalId: externalId, path, blob: file.blob })
+        : await argos.invoke('review.files.unmark', { sessionExternalId: externalId, path })
+      unwrap<'review.files.mark'>(result)
+    } catch (error) {
+      file.reviewed = !reviewed
+      throw error
+    }
+  }
+
   async function markReviewed(): Promise<void> {
     const toId = diff.value?.toId
     if (toId == null) return
@@ -95,6 +113,7 @@ export const useReviewStore = defineStore('review', () => {
     focusFile,
     load,
     open,
+    toggleFileReviewed,
     markReviewed,
     addComment,
     deleteComment,
