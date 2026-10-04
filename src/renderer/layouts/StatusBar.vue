@@ -6,6 +6,7 @@ import { useAppStatusStore } from '../stores/app-status'
 import { useNoticesStore } from '../stores/notices'
 import ContextGauge from '../features/usage/ContextGauge.vue'
 import QuotaIndicator from '../features/usage/QuotaIndicator.vue'
+import UpdateIndicator from '../features/updates/UpdateIndicator.vue'
 
 /** Barre d'état : indexeur, message bref de la dernière action, contexte et quota (F08), version. */
 const { t, te } = useI18n()
@@ -38,6 +39,7 @@ const noticeText = computed(() => {
     <span class="status__spacer" />
     <ContextGauge />
     <QuotaIndicator />
+    <UpdateIndicator />
     <span v-if="info" class="status__item">{{ t('status.version', { version: info.version }) }}</span>
   </footer>
 </template>

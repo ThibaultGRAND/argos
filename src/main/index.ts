@@ -49,6 +49,7 @@ app.whenReady().then(
       liveListener: { onEvent: (runId, event) => broadcast('live.event', { runId, event: toLiveEventDto(event) }) },
       onSnapshotsChanged: (sessionExternalId) => broadcast('snapshots.updated', { sessionExternalId }),
       onQuota: (quota) => broadcast('usage.quota', quota),
+      onUpdateState: (state) => broadcast('updates.status', state),
       openSession: (sessionId) => {
         const [window] = BrowserWindow.getAllWindows()
         if (window !== undefined) {
@@ -66,6 +67,7 @@ app.whenReady().then(
     createMainWindow()
     // Quota de l'abonnement (F08) : au démarrage, au retour au premier plan et toutes les 5 minutes si Argos est au premier plan.
     composition.refreshQuota()
+    composition.startUpdates()
     app.on('browser-window-focus', () => composition?.refreshQuota())
     quotaTimer = setInterval(() => {
       if (BrowserWindow.getFocusedWindow() !== null) composition?.refreshQuota()

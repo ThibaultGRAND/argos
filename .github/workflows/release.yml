@@ -1,0 +1,61 @@
+name: Release
+
+# Un tag v* (créé par `npm version`) construit les installateurs des 3 OS et les dépose dans un brouillon
+# de GitHub Release. Thibault relit le brouillon, colle les notes du CHANGELOG et publie (features/distribution.md).
+on:
+  push:
+    tags: ['v*']
+
+# Écriture nécessaire pour créer le brouillon et y déposer les fichiers.
+permissions:
+  contents: write
+
+jobs:
+  draft:
+    name: Brouillon de version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Version du tag identique à package.json
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          if [ "$GITHUB_REF_NAME" != "$expected" ]; then
+            echo "Le tag $GITHUB_REF_NAME ne correspond pas à package.json ($expected)." >&2
+            exit 1
+          fi
+      # Un seul brouillon, créé avant les builds : les trois OS y déposent leurs fichiers sans se doubler.
+      - name: Créer le brouillon
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 ||
+            gh release create "$GITHUB_REF_NAME" --draft --title "Argos ${GITHUB_REF_NAME#v}" \
+              --notes "Notes à reprendre de CHANGELOG.md avant publication."
+
+  build:
+    name: Installateurs (${{ matrix.os }})
+    needs: draft
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: --mac
+          - os: windows-latest
+            target: --win
+          - os: ubuntu-latest
+            target: --linux
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+      - run: npm run build
+      - name: Construire et déposer dans le brouillon
+        run: npx electron-builder ${{ matrix.target }} --config config/electron-builder.yml --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

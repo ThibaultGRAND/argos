@@ -11,6 +11,7 @@ import { usePreferencesStore } from '../../stores/preferences'
 import UiButton from '../../ui/UiButton.vue'
 import UiMarker from '../../ui/UiMarker.vue'
 import { shortenPath } from '../../utils/format'
+import { useUpdateText } from '../updates/update-text'
 
 /** Écran Paramètres (F16), dans la mise en page du document C1. */
 const router = useRouter()
@@ -18,7 +19,13 @@ const { t } = useI18n()
 const preferencesStore = usePreferencesStore()
 const notices = useNoticesStore()
 const { preferences } = storeToRefs(preferencesStore)
-const { info } = storeToRefs(useAppStatusStore())
+const appStatus = useAppStatusStore()
+const { info, update: updateState } = storeToRefs(appStatus)
+const updateText = useUpdateText()
+
+function checkUpdates(): void {
+  void notices.attempt(() => appStatus.checkUpdates())
+}
 
 const themes: readonly PreferencesDto['theme'][] = ['dark', 'light', 'system']
 const languages: readonly PreferencesDto['language'][] = ['fr', 'en']
@@ -176,6 +183,43 @@ onBeforeUnmount(() => {
         </span>
         <UiButton @click="rebuild">{{ t('settings.rebuild') }}</UiButton>
       </div>
+    </section>
+
+    <section class="settings__section">
+      <UiMarker :label="t('settings.sections.updates')" />
+      <template v-if="updateState.kind !== 'unsupported'">
+        <div class="settings__row">
+          <span class="settings__label">
+            {{ t('settings.updates') }}
+            <span class="settings__help">{{ t('settings.updatesHelp') }}</span>
+          </span>
+          <div class="settings__choices">
+            <button
+              v-for="enabled in [true, false]"
+              :key="String(enabled)"
+              type="button"
+              class="settings__choice"
+              :class="{ 'settings__choice--active': preferences.updates === enabled }"
+              @click="update({ updates: enabled })"
+            >
+              {{ t(enabled ? 'settings.on' : 'settings.off') }}
+            </button>
+          </div>
+        </div>
+        <div class="settings__row">
+          <span class="settings__label">{{ updateText }}</span>
+          <UiButton
+            v-if="updateState.kind === 'ready' || (updateState.kind === 'available' && updateState.mode === 'manual')"
+            @click="notices.attempt(() => appStatus.installUpdate())"
+          >
+            {{ t(updateState.kind === 'ready' ? 'updates.restart' : 'updates.download') }}
+          </UiButton>
+          <UiButton v-else :disabled="updateState.kind === 'checking'" @click="checkUpdates">
+            {{ t('settings.checkNow') }}
+          </UiButton>
+        </div>
+      </template>
+      <p v-else class="settings__help">{{ updateText }}</p>
     </section>
 
     <section class="settings__section">

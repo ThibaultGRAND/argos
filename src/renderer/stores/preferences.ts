@@ -12,6 +12,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     editor: 'vscode',
     firstRunCompleted: true,
     notifications: true,
+    updates: true,
   })
   const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)')
 

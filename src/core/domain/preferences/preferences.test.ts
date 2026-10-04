@@ -10,6 +10,7 @@ describe('restorePreferences', () => {
         editor: 'cursor',
         firstRunCompleted: true,
         notifications: false,
+        updates: false,
       }),
     ).toEqual({
       theme: 'light',
@@ -17,6 +18,7 @@ describe('restorePreferences', () => {
       editor: 'cursor',
       firstRunCompleted: true,
       notifications: false,
+      updates: false,
     })
   })
 

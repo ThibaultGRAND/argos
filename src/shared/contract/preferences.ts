@@ -11,6 +11,7 @@ export const PreferencesSchema = z.object({
   editor: EditorSchema,
   firstRunCompleted: z.boolean(),
   notifications: z.boolean(),
+  updates: z.boolean(),
 })
 export type PreferencesDto = z.infer<typeof PreferencesSchema>
 

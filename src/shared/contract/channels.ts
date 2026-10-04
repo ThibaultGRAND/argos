@@ -37,6 +37,9 @@ export const requestNames = [
   'usage.quota',
   'usage.contextGauge',
   'usage.contextDetail',
+  'updates.status',
+  'updates.check',
+  'updates.install',
 ] as const
 export type RequestName = (typeof requestNames)[number]
 
@@ -47,6 +50,7 @@ export const eventNames = [
   'snapshots.updated',
   'app.navigate',
   'usage.quota',
+  'updates.status',
 ] as const
 export type EventName = (typeof eventNames)[number]
 

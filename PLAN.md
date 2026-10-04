@@ -518,7 +518,7 @@ Les versions cibles sont **validées** (voir §5).
 | F06 | Snapshots d'agent et retour arrière (git fantôme) | V1 | terminé | [features/agent_changes.md](features/agent_changes.md), [origine](features/agent_snapshots.md) |
 | F07 | Review façon PR | V1 | terminé | [features/agent_changes.md](features/agent_changes.md), [origine](features/pr_review.md) |
 | F08 | Jauge de contexte et d'usage | V1 | à tester | [features/usage_gauge.md](features/usage_gauge.md) |
-| F09 | Distribution (builds 3 OS, GitHub Releases, mises à jour) | V1 | à définir | `features/distribution.md` |
+| F09 | Distribution (builds 3 OS, GitHub Releases, mises à jour) | V1 | à tester | [features/distribution.md](features/distribution.md) |
 | F10 | Plan mode amélioré (plans comme objets, plan vs réalité) | V2 | à définir | `features/plan_mode.md` |
 | F11 | Profils de pré-prompts | V2 | à définir | `features/profiles.md` |
 | F12 | Blame par agent | V2 | à définir | `features/agent_blame.md` |

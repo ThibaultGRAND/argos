@@ -16,6 +16,9 @@ import { SnapshotService } from '../core/application/snapshots/snapshot-service'
 import { ReviewService } from '../core/application/review/review-service'
 import { NotificationService } from '../core/application/notifications/notification-service'
 import { UsageService } from '../core/application/usage/usage-service'
+import { UpdateService } from '../core/application/updates/update-service'
+import type { UpdateState } from '../core/domain/updates/update'
+import { ElectronUpdateChannel } from './adapters/electron-update-channel'
 import { resolveSessionTitle } from '../core/domain/history/session-title'
 import { GetEnvironment } from '../core/application/settings/get-environment'
 import { RebuildIndex } from '../core/application/settings/rebuild-index'
@@ -56,6 +59,8 @@ import type { AppPaths } from './paths'
 
 export interface Composition {
   readonly handlers: RequestHandlers
+  /** Vérifie les mises à jour au démarrage puis toutes les 6 heures (F09). */
+  startUpdates(): void
   /** Relit le quota de l'abonnement (au plus une fois par minute) : démarrage, retour au premier plan, minuterie. */
   refreshQuota(): void
   dispose(): void
@@ -71,8 +76,12 @@ export interface CompositionContext {
   /** Ramène Argos au premier plan sur une session (clic sur une notification). */
   readonly openSession: (sessionId: number | null) => void
   readonly onQuota: (quota: PlanQuotaDto) => void
+  readonly onUpdateState: (state: UpdateState) => void
   readonly log: (message: string) => void
 }
+
+/** Dépôt public d'Argos : page de téléchargement des versions (F09). */
+const REPOSITORY_URL = 'https://github.com/ThibaultGRAND/argos'
 
 /** Racine de composition : branche les adaptateurs sur les cas d'usage (injection manuelle). */
 export function compose({
@@ -83,6 +92,7 @@ export function compose({
   onSnapshotsChanged,
   openSession,
   onQuota,
+  onUpdateState,
   log,
 }: CompositionContext): Composition {
   const argosDb = openArgosDatabase({
@@ -128,6 +138,19 @@ export function compose({
     probe: new ClaudeUsageProbe({ executable, environment }),
     now: () => new Date(),
     onQuota: (quota) => onQuota(toQuotaDto(quota)),
+    log,
+  })
+  const updateService = new UpdateService({
+    channel: new ElectronUpdateChannel(log),
+    preferences: preferencesRepository,
+    links: new ElectronLinkOpener(),
+    repositoryUrl: REPOSITORY_URL,
+    now: () => new Date(),
+    every: (intervalMs, action) => {
+      const timer = setInterval(action, intervalMs)
+      return () => clearInterval(timer)
+    },
+    onState: onUpdateState,
     log,
   })
   const shadow = new GitShadowRepository({ root: paths.shadowGit, environment })
@@ -329,6 +352,12 @@ export function compose({
       const quota = usageService.currentQuota()
       return { quota: quota === null ? null : toQuotaDto(quota) }
     },
+    'updates.status': () => updateService.current(),
+    'updates.check': () => updateService.check(),
+    'updates.install': async () => {
+      await updateService.install()
+      return undefined
+    },
     'usage.contextGauge': ({ model, tokens }) => usageService.gauge(model, tokens),
     'usage.contextDetail': async ({ sessionExternalId }) => {
       const breakdown = await liveSessions.contextBreakdown(sessionExternalId)
@@ -343,7 +372,9 @@ export function compose({
   return {
     handlers,
     refreshQuota: () => void usageService.refreshQuota(),
+    startUpdates: () => void updateService.start(),
     dispose: () => {
+      updateService.stop()
       liveSessions.stopAll()
       sessionQueries.close()
       argosDb.close()

@@ -14,6 +14,8 @@ export interface Preferences {
   readonly firstRunCompleted: boolean
   /** Notifications du système pour les sessions pilotées (F14). */
   readonly notifications: boolean
+  /** Vérification automatique des mises à jour (F09). */
+  readonly updates: boolean
 }
 
 /** Thème sombre, français et VSCode par défaut (PLAN.md §1.4, décisions du 2026-10-02). */
@@ -23,6 +25,7 @@ export const defaultPreferences: Preferences = {
   editor: 'vscode',
   firstRunCompleted: false,
   notifications: true,
+  updates: true,
 }
 
 const oneOf =
@@ -48,6 +51,7 @@ export function restorePreferences(stored: Readonly<Record<string, unknown>>): P
         : defaultPreferences.firstRunCompleted,
     notifications:
       typeof stored['notifications'] === 'boolean' ? stored['notifications'] : defaultPreferences.notifications,
+    updates: typeof stored['updates'] === 'boolean' ? stored['updates'] : defaultPreferences.updates,
   }
 }
 
@@ -58,5 +62,6 @@ export function updatePreferences(current: Preferences, changes: Partial<Prefere
     editor: changes.editor ?? current.editor,
     firstRunCompleted: changes.firstRunCompleted ?? current.firstRunCompleted,
     notifications: changes.notifications ?? current.notifications,
+    updates: changes.updates ?? current.updates,
   }
 }

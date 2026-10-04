@@ -183,7 +183,8 @@
       "editor": "C. Editor",
       "sources": "D. Sources",
       "data": "E. Data",
-      "about": "F. About"
+      "about": "G. About",
+      "updates": "F. Updates"
     },
     "theme": "Theme",
     "language": "Language",
@@ -199,11 +200,15 @@
     "rebuildStarted": "Index rebuild started.",
     "version": "Version",
     "license": "License",
-    "licenseValue": "To be decided (GitHub setup in progress)",
+    "licenseValue": "MIT",
     "notifications": "Notifications",
     "notificationsHelp": "When Argos is in the background: permission requested, turn finished, error.",
     "on": "On",
-    "off": "Off"
+    "off": "Off",
+    "updates": "Check automatically",
+    "updatesHelp": "At startup and every 6 hours, on Argos's GitHub page.",
+    "checkNow": "Check now",
+    "updatesDev": "Updates are only checked in the installed app."
   },
   "firstRun": {
     "title": "Choisissez votre langue",
@@ -372,5 +377,16 @@
       "free": "Free",
       "other": "{label}"
     }
+  },
+  "updates": {
+    "idle": "Not checked yet",
+    "checking": "Checking…",
+    "up-to-date": "Up to date (checked at {time})",
+    "available": "Version {version} available",
+    "downloading": "Downloading version {version} · {percent}%",
+    "ready": "Version {version} ready",
+    "error": "Could not check: {message}",
+    "download": "Download",
+    "restart": "Restart to install"
   }
 }

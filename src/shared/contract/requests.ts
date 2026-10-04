@@ -25,6 +25,7 @@ import {
 } from './live'
 import { RestoreInputSchema, SessionChangesSchema } from './snapshots'
 import { NewReviewCommentSchema, ReviewCommentSchema, ReviewDiffSchema, ReviewRangeSchema } from './review'
+import { UpdateStateSchema } from './updates'
 import { ContextDetailOutputSchema, ContextGaugeInputSchema, ContextGaugeSchema, QuotaOutputSchema } from './usage'
 
 interface RequestDefinition {
@@ -82,6 +83,9 @@ export const requests = {
     output: z.object({ runId: z.string(), sent: z.number().int() }),
   },
   'usage.quota': { input: z.undefined(), output: QuotaOutputSchema },
+  'updates.status': { input: z.undefined(), output: UpdateStateSchema },
+  'updates.check': { input: z.undefined(), output: UpdateStateSchema },
+  'updates.install': { input: z.undefined(), output: z.undefined() },
   'usage.contextGauge': { input: ContextGaugeInputSchema, output: ContextGaugeSchema },
   'usage.contextDetail': { input: z.object({ sessionExternalId: z.string() }), output: ContextDetailOutputSchema },
   'search.query': { input: SearchInputSchema, output: SearchResultsSchema },

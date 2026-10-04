@@ -59,6 +59,7 @@ describe('argos.db', () => {
       editor: 'vscode',
       firstRunCompleted: false,
       notifications: true,
+      updates: true,
     })
     handle.close()
   })
@@ -71,6 +72,7 @@ describe('argos.db', () => {
       editor: 'cursor',
       firstRunCompleted: true,
       notifications: false,
+      updates: false,
     })
     first.close()
 
@@ -81,6 +83,7 @@ describe('argos.db', () => {
       editor: 'cursor',
       firstRunCompleted: true,
       notifications: false,
+      updates: false,
     })
     second.close()
   })

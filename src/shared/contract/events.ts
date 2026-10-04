@@ -5,6 +5,7 @@ import { IndexerStatusSchema } from './indexer'
 import { LiveEventEnvelopeSchema } from './live'
 import { SnapshotsUpdatedSchema } from './snapshots'
 import { PlanQuotaSchema } from './usage'
+import { UpdateStateSchema } from './updates'
 
 /** Événements du processus principal vers l'interface. `satisfies` garantit la correspondance avec channels.ts. */
 export const events = {
@@ -14,6 +15,7 @@ export const events = {
   'snapshots.updated': SnapshotsUpdatedSchema,
   'app.navigate': z.object({ sessionId: z.number().int().nullable() }),
   'usage.quota': PlanQuotaSchema,
+  'updates.status': UpdateStateSchema,
 } as const satisfies Record<EventName, z.ZodType>
 
 export type Events = typeof events

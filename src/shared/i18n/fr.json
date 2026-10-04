@@ -183,7 +183,8 @@
       "editor": "C. Éditeur",
       "sources": "D. Sources",
       "data": "E. Données",
-      "about": "F. À propos"
+      "about": "G. À propos",
+      "updates": "F. Mises à jour"
     },
     "theme": "Thème",
     "language": "Langue",
@@ -199,11 +200,15 @@
     "rebuildStarted": "Reconstruction de l'index lancée.",
     "version": "Version",
     "license": "Licence",
-    "licenseValue": "À définir (configuration GitHub en cours)",
+    "licenseValue": "MIT",
     "notifications": "Notifications",
     "notificationsHelp": "Quand Argos est en arrière-plan : permission demandée, tour terminé, erreur.",
     "on": "Activées",
-    "off": "Désactivées"
+    "off": "Désactivées",
+    "updates": "Vérifier automatiquement",
+    "updatesHelp": "Au démarrage puis toutes les 6 heures, sur la page GitHub d'Argos.",
+    "checkNow": "Vérifier maintenant",
+    "updatesDev": "Les mises à jour se vérifient seulement dans l'app installée."
   },
   "firstRun": {
     "title": "Choisissez votre langue",
@@ -372,5 +377,16 @@
       "free": "Libre",
       "other": "{label}"
     }
+  },
+  "updates": {
+    "idle": "Pas encore vérifié",
+    "checking": "Vérification…",
+    "up-to-date": "À jour (vérifié à {time})",
+    "available": "Version {version} disponible",
+    "downloading": "Téléchargement de la version {version} · {percent} %",
+    "ready": "Version {version} prête",
+    "error": "Vérification impossible : {message}",
+    "download": "Télécharger",
+    "restart": "Redémarrer pour l'installer"
   }
 }
