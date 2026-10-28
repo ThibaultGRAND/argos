@@ -55,7 +55,7 @@
     "@vue/test-utils": "2.5.1",
     "dependency-cruiser": "18.5.0",
     "drizzle-kit": "0.31.11",
-    "electron": "44.5.1",
+    "electron": "44.9.1",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
     "eslint": "10.11.0",
